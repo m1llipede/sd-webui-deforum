@@ -37,6 +37,79 @@ Hover-over descriptions added or improved for:
 
 ---
 
+## Best Practices — Hard-Won Notes from Long Render Sessions
+
+These are practical lessons learned from hundreds of hours of Deforum renders, not from docs. Take what's useful.
+
+### Sampler & Quality
+
+- **DPM++ 2M SDE + Karras at 40 steps** is the most reliable baseline. Smooth, coherent frame-to-frame, and fast enough for 8000+ frame runs. Don't chase exotic samplers — consistency matters more than peak quality in animation.
+- **Resolution: 1024x1024** for SDXL models. Don't go higher unless you have the VRAM headroom; it slows cadence and rarely improves the animation read at video playback speed.
+
+### Coherence & Motion
+
+- **Diffusion cadence 2-4** is the sweet spot. Cadence 1 (every frame diffused) burns time and often over-cooks motion artifacts. Cadence 2-4 lets optical flow do the heavy lifting between frames while keeping the model's creative contribution where it counts.
+- **Strength 0.80-0.85** is the working range for 3D mode. Lower than 0.78 and the model loses creative grip; higher than 0.88 and you get frame flicker. 0.82 is a reliable default.
+- **Seed behavior: schedule** — lets seed drift organically over time. Fixed seed freezes the aesthetic (useful for locked looks), random seed scrambles coherence. Schedule gives you controlled organic variation.
+
+### Prompt Keyframing
+
+- **Keyframe every 600-800 frames** for smooth thematic transitions. Tighter than 500 and transitions feel rushed; looser than 1000 and sections feel aimless.
+- **Write prompts as active camera moves** — "Flying into", "Penetrating a", "Soaring through" — this reinforces the motion vectors you set and keeps the model oriented to the 3D movement.
+- **Keep negative prompts consistent across all keyframes.** Changing negatives mid-render causes tonal lurches even if positives are smooth.
+
+### LoRA Stacking
+
+These LoRAs have proven reliable for psychedelic/visionary/abstract animation work:
+
+| LoRA | Role | Typical weight |
+|---|---|---|
+| `Unfazed_Psychedelic-000009` | Core psychedelic style driver | 0.70-0.85 |
+| `3D_Fractals_wDoF` | Depth-of-field fractal dimension | 0.40-0.50 |
+| `ral-mndlbrt-sdxl` | Mandelbrot/sacred geometry | 0.45-0.65 |
+| `ral-colorswirl-sdxl` | Vivid color motion | 0.40-0.50 |
+| `ral-hlgrphc-sdxl` | Holographic / diagrammatic overlay | 0.35-0.45 |
+| `ral-polygon-sdxl` | Hard geometric structure | 0.45-0.55 |
+| `ral-3dcubes-sdxl` | Isometric cube lattices | 0.40-0.50 |
+| `ral-iricnt-sdxl` | Iridescent surface shimmer | 0.40-0.50 |
+| `add-detail-xl` | Global detail enhancement | 0.40-0.60 |
+| `HR_Giger_SDXL` | Biomechanical texture | 0.40-0.55 |
+| `fractalex` | Fractal field extension | 0.40-0.50 |
+
+**Keep total LoRA weight under ~2.0.** Stacking 3-4 LoRAs at moderate weights (0.35-0.55 each) is more stable than 2 LoRAs at high weights. Going over ~2.0 total causes color saturation blowout and geometry instability.
+
+### Checkpoint Models
+
+All models below are SDXL. Deforum with SDXL requires the Forge fork or a webui build with SDXL support.
+
+| Model | Best for |
+|---|---|
+| `juggernautXL_v8Rundiffusion` | Photorealistic base, holds detail well across long runs |
+| `dynavisionXLAllInOneStylized` | Stylized/illustrated renders, great LoRA compatibility |
+| `dreamshaperXL_lightningDPMSDE` | Fast, good for motion-heavy sequences |
+| `nightvisionxl_V900` | Dark atmospheric work, Giger-adjacent aesthetics |
+| `RealVisXL_V5.0` | High-realism, clean geometry, pairs well with fractal LoRAs |
+| `epicrealismXL_pureFix` | Grounded surrealism, strong structure |
+| `CyberRealisticXL_V9.0` | Sci-fi and tech aesthetics |
+| `MOHAWK_v20` | Stylized character/organic work |
+
+For pure abstract/psychedelic animation, `dynavisionXL` + heavy LoRA stack is the most expressive combination. For structure-forward renders (geometric, diagrammatic), `RealVisXL` or `epicrealismXL` hold form better across 1000+ frames.
+
+### Settings File Workflow
+
+- **Save a named settings file after every render you like.** The auto-save in `outputs/img2img-images/Deforum_*/` is your safety net, but give good runs a real name immediately — you will not remember which timestamp was the good one.
+- **Use the Settings File path box + Save As** to write named presets. Load them back with "Load All Settings" to resume from a known state.
+- **Always check "Use init"** if you're using an init image — or use this fork, which auto-checks it on image drop.
+- The `smooth_master_settings.txt` in the webui root is a working baseline from a successful 8000-frame run. Load it as a starting point.
+
+### 3D Mode Tips
+
+- **Large delay on first frame is normal** — depth models load at render start. Don't interrupt; wait for it.
+- If you get depth artifacts mid-run, the depth model ran out of VRAM. Lower resolution or add `--lowvram` to your webui launch args.
+- **MiDaS weight 0.3-0.5** is a good range. Too high and depth warping dominates motion; too low and 3D parallax disappears.
+
+---
+
 # Deforum Stable Diffusion — official extension for AUTOMATIC1111's webui
 
 <p align="left">
