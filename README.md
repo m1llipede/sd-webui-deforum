@@ -1,4 +1,42 @@
 
+# Deforum Stable Diffusion — m1llipede fork
+
+> **Fork of [deforum-art/sd-webui-deforum](https://github.com/deforum-art/sd-webui-deforum)** with UI improvements focused on usability during long render sessions.
+
+## Changes vs upstream
+
+### Layout & Navigation
+- **Keyframes tab two-column layout** — Strength schedules (Strength / CFG / Seed / SubSeed / Step / Sampler / Checkpoint) and Motion tabs (Motion / Noise / Coherence / Anti-Blur / Depth) now display side-by-side in two columns instead of stacked. See both at the same time without scrolling.
+- **Larger output gallery** — gallery fills ~75% of the viewport so you can actually see what you're rendering.
+
+### Settings File Workflow
+- **Drag & drop settings upload** — drop any `.txt` or `.json` Deforum settings file onto the Upload area; all UI controls populate instantly.
+- **Upload auto-updates path** — the Settings File path textbox now updates to the uploaded file's path automatically, so Save writes back to the correct file.
+- **Save As... button** — saves settings to any filename/path via a popup dialog instead of always overwriting the same file.
+- **Live JSON settings editor** — a full JSON editor is built into the left panel. Click "Load UI to Editor" to see all current settings as JSON, edit directly, then "Apply Editor to UI" to push changes back to all controls.
+
+### Init Image Fix
+- **Init image auto-enables "Use init"** — dropping an image into the Init image box now automatically ticks the "Use init" checkbox. Previously renders would silently ignore the image if the checkbox wasn't manually ticked.
+
+### Depth Settings
+- **MiDaS/Zoe weight always visible** — the MiDaS weight field is now always shown in Depth Warping & FOV. Previously it was hidden unless you selected a legacy depth algorithm from the dropdown.
+
+### Improved Tooltips
+Hover-over descriptions added or improved for:
+- `noise_schedule` — explains what higher/lower values do to per-frame variation
+- `diffusion_cadence` — explains the speed/quality tradeoff (1 = every frame diffused, 2-4 = good balance)
+- `optical_flow_cadence` — explains RAFT vs DIS Fine vs DIS Medium vs Farneback tradeoffs
+- `color_coherence` — explains LAB vs HSV vs RGB vs None and when to use each
+- `seed_behavior` — explains iter / fixed / random / schedule in plain English
+- `midas_weight` — adds range guidance and default recommendation
+- `perspective_flip_theta/phi/gamma` — were blank, now describe the axis each controls
+- `enable_perspective_flip` — explains the 2D-simulates-3D use case
+
+### Bug Fixes
+- **Save crash fix** — fixed a NoneType crash when saving settings with no model loaded.
+
+---
+
 # Deforum Stable Diffusion — official extension for AUTOMATIC1111's webui
 
 <p align="left">
