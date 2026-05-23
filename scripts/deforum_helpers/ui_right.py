@@ -32,7 +32,15 @@ def on_ui_tabs():
     i1_store_backup = f"<p style=\"text-align:center;font-weight:bold;margin-bottom:0em\">Deforum extension version 3.1, for auto1111 v1.9 | Git commit: {get_deforum_version()}</p>"
     i1_store = i1_store_backup
 
-    with gr.Blocks(analytics_enabled=False) as deforum_interface:
+    deforum_css = """
+        #deforum_gallery_container { min-height: 80vh; }
+        #deforum_gallery { min-height: 75vh; height: 75vh; }
+        #deforum_gallery > div { height: 100%; }
+        #deforum_gallery button.thumbnail-item { height: 100%; max-height: 75vh; }
+        #deforum_gallery button.thumbnail-item img { object-fit: contain; max-height: 72vh; width: auto; }
+        #deforum_gallery .preview { max-height: 75vh; }
+    """
+    with gr.Blocks(analytics_enabled=False, css=deforum_css) as deforum_interface:
         components = {}
         dummy_component = gr.Label(visible=False)
         with gr.Row(elem_id='deforum_progress_row').style(equal_height=False, variant='compact'):
@@ -107,9 +115,12 @@ def on_ui_tabs():
                     html_info = output_panel.infotext
 
                 with gr.Row(variant='compact'):
-                    settings_path = gr.Textbox("deforum_settings.txt", elem_id='deforum_settings_path', label="Settings File", info="settings file path can be relative to webui folder OR full - absolute")
+                    settings_path = gr.Textbox("deforum_settings.txt", elem_id='deforum_settings_path', label="Settings File", info="Path to load/save settings. Updated automatically when you upload a file.")
+                with gr.Row(variant='compact'):
+                    upload_settings_file = gr.File(label="Upload Settings (Drag & Drop)", file_count="single", file_types=[".txt", ".json"])
                 with gr.Row(variant='compact'):
                     save_settings_btn = gr.Button('Save Settings', elem_id='deforum_save_settings_btn')
+                    save_as_settings_btn = gr.Button('Save As...', elem_id='deforum_save_as_settings_btn')
                     load_settings_btn = gr.Button('Load All Settings', elem_id='deforum_load_settings_btn')
                     load_video_settings_btn = gr.Button('Load Video Settings', elem_id='deforum_load_video_settings_btn')
 
@@ -130,7 +141,29 @@ def on_ui_tabs():
         settings_component_list = [components[name] for name in get_settings_component_names()]
         video_settings_component_list = [components[name] for name in list(DeforumOutputArgs().keys())]
 
+        # Auto-update path textbox when a settings file is uploaded
+        upload_settings_file.change(
+            fn=lambda f: gr.update(value=f.name) if f is not None else gr.update(),
+            inputs=[upload_settings_file],
+            outputs=[settings_path],
+        )
+
         save_settings_btn.click(
+            fn=wrap_gradio_call(save_settings),
+            inputs=[settings_path] + settings_component_list + video_settings_component_list,
+            outputs=[],
+        )
+
+        # Save As: JS prompts for a new filename, injects it into the path box, then saves
+        save_as_settings_btn.click(
+            fn=None,
+            inputs=[settings_path],
+            outputs=[settings_path],
+            _js="""(current_path) => {
+                const name = prompt('Save settings as (full path or filename):', current_path || 'deforum_settings.txt');
+                return name ? name : current_path;
+            }"""
+        ).then(
             fn=wrap_gradio_call(save_settings),
             inputs=[settings_path] + settings_component_list + video_settings_component_list,
             outputs=[],
@@ -146,6 +179,31 @@ def on_ui_tabs():
             fn=wrap_gradio_call(load_video_settings),
             inputs=[settings_path] + video_settings_component_list,
             outputs=video_settings_component_list,
+        )
+        
+        # New Settings Editor and File Upload logic
+        from .gradio_funcs import sync_ui_to_editor, sync_editor_to_ui, process_settings_upload
+        
+        settings_editor_code = components['settings_editor_code']
+        load_ui_to_editor_btn = components['load_ui_to_editor_btn']
+        apply_editor_to_ui_btn = components['apply_editor_to_ui_btn']
+        
+        load_ui_to_editor_btn.click(
+            fn=sync_ui_to_editor,
+            inputs=settings_component_list,
+            outputs=[settings_editor_code],
+        )
+        
+        apply_editor_to_ui_btn.click(
+            fn=sync_editor_to_ui,
+            inputs=[settings_editor_code] + settings_component_list,
+            outputs=settings_component_list,
+        )
+        
+        upload_settings_file.change(
+            fn=process_settings_upload,
+            inputs=[upload_settings_file] + settings_component_list,
+            outputs=settings_component_list,
         )
         
     # handle persistent settings - load the persistent file upon UI launch

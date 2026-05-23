@@ -92,6 +92,15 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
     os.makedirs(args.outdir, exist_ok=True)
     print(f"Saving animation frames to:\n{args.outdir}")
 
+    # ensure a model is loaded before proceeding - auto-load if not
+    import modules.shared as sh
+    if sh.sd_model is None:
+        print("[Deforum] No model loaded - triggering auto-load from config...")
+        from modules import sd_models
+        sd_models.reload_model_weights()
+        if sh.sd_model is None:
+            raise RuntimeError("No Stable Diffusion model is loaded. Please select a checkpoint in the A1111 UI before running Deforum.")
+
     # save settings.txt file for the current run
     save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, controlnet_args, video_args, root)
 
@@ -221,6 +230,7 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
 
         state.job = f"frame {frame_idx + 1}/{anim_args.max_frames}"
         state.job_no = frame_idx + 1
+        state.textinfo = f"Frame {frame_idx + 1} / {anim_args.max_frames}"
 
         if state.skipped:
             print("\n** PAUSED **")

@@ -50,6 +50,17 @@ def setup_deforum_left_side_ui():
             controlnet_dict = setup_controlnet_ui()  # ControlNet tab
             tab_hybrid_params = get_tab_hybrid(da)  # Hybrid tab
             tab_output_params = get_tab_output(da, dv)  # Output tab
+            
+            # Settings Editor Tab
+            with gr.TabItem('Settings Editor', elem_id='settings_editor_tab'):
+                with gr.Row():
+                    gr.HTML("Use this to directly edit the raw JSON settings. Be careful: invalid JSON or missing keys will cause errors!")
+                with gr.Row():
+                    settings_editor_code = gr.Code(language='json', interactive=True, label="Full Settings JSON", elem_id="deforum_settings_editor")
+                with gr.Row():
+                    load_ui_to_editor_btn = gr.Button("Load UI to Editor", variant='secondary')
+                    apply_editor_to_ui_btn = gr.Button("Apply Editor to UI", variant='primary')
+            
             # add returned gradio elements from main tabs to locals()
             for key, value in {**tab_run_params, **tab_keyframes_params, **tab_prompts_params, **tab_init_params, **controlnet_dict, **tab_hybrid_params, **tab_output_params}.items():
                 locals()[key] = value

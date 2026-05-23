@@ -144,25 +144,25 @@ def DeforumAnimArgs():
             "label": "Enable perspective flip",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "enables 2D perspective warp to simulate 3D-like movement without using depth maps. Good for stylized 2D animations."
         },
         "perspective_flip_theta": {
             "label": "Perspective flip theta",
             "type": "textbox",
             "value": "0: (0)",
-            "info": ""
+            "info": "tilt angle (X-axis pitch) for 2D perspective warp. Positive tilts forward, negative tilts back."
         },
         "perspective_flip_phi": {
             "label": "Perspective flip phi",
             "type": "textbox",
             "value": "0: (0)",
-            "info": ""
+            "info": "horizontal lean angle (Y-axis yaw) for 2D perspective warp. Simulates left/right head tilt."
         },
         "perspective_flip_gamma": {
             "label": "Perspective flip gamma",
             "type": "textbox",
             "value": "0: (0)",
-            "info": ""
+            "info": "roll angle (Z-axis rotation) for 2D perspective warp."
         },
         "perspective_flip_fv": {
             "label": "Perspective flip tv",
@@ -174,7 +174,7 @@ def DeforumAnimArgs():
             "label": "Noise schedule",
             "type": "textbox",
             "value": "0: (0.065)",
-            "info": ""
+            "info": "amount of noise added per frame to increase diversity. Higher = more random variation each frame. 0.065 is a good default; try 0.03-0.08 for smooth animations."
         },
         "strength_schedule": {
             "label": "Strength schedule",
@@ -395,7 +395,7 @@ def DeforumAnimArgs():
             "type": "dropdown",
             "choices": ['None', 'HSV', 'LAB', 'RGB', 'Video Input', 'Image'],
             "value": "LAB",
-            "info": "choose an algorithm/ method for keeping color coherence across the animation"
+            "info": "keeps colors consistent across frames. LAB is best for most renders. HSV preserves hue/saturation. RGB is simplest. None = no correction (colors may drift)."
         },
         "color_coherence_image_path": {
             "label": "Color coherence image path",
@@ -429,14 +429,14 @@ def DeforumAnimArgs():
             "maximum": 50,
             "step": 1,
             "value": 2,
-            "info": "# of in-between frames that will not be directly diffused"
+            "info": "how many in-between frames are generated via warping only (no diffusion). Higher = faster renders but less detail per frame. 1 = every frame diffused (slow, sharp). 2-4 is a good balance."
         },
         "optical_flow_cadence": {
             "label": "Optical flow cadence",
             "type": "dropdown",
             "choices": ['None', 'RAFT', 'DIS Medium', 'DIS Fine', 'Farneback'],
             "value": "None",
-            "info": "use optical flow estimation for your in-between (cadence) frames"
+            "info": "uses optical flow to generate smoother in-between (cadence) frames. RAFT = highest quality/slowest. DIS Fine = good balance. Farneback = fastest. None = simple warping."
         },
         "cadence_flow_factor_schedule": {
             "label": "Cadence flow factor schedule",
@@ -517,8 +517,8 @@ def DeforumAnimArgs():
             "type": "number",
             "precision": None,
             "value": 0.2,
-            "info": "sets a midpoint at which a depth-map is to be drawn: range [-1 to +1]",
-            "visible": False
+            "info": "sets a midpoint at which a depth-map is to be drawn: range [-1 to +1]. 0.2 is a good default; higher values give depth more influence over the warp.",
+            "visible": True
         },
         "padding_mode": {
             "label": "Padding mode",
@@ -543,7 +543,7 @@ def DeforumAnimArgs():
         "video_init_path": {
             "label": "Video init path/ URL",
             "type": "textbox",
-            "value": 'https://deforum.github.io/a1/V1.mp4',
+            "value": '',
             "info": ""
         },
         "extract_nth_frame": {
@@ -582,7 +582,7 @@ def DeforumAnimArgs():
         "video_mask_path": {
             "label": "Video mask path",
             "type": "textbox",
-            "value": 'https://deforum.github.io/a1/VM1.mp4',
+            "value": '',
             "info": ""
         },
         "hybrid_comp_alpha_schedule": {
@@ -791,7 +791,7 @@ def DeforumArgs():
             "type": "radio",
             "choices": ['iter', 'fixed', 'random', 'ladder', 'alternate', 'schedule'],
             "value": "iter",
-            "info": "controls the seed behavior that is used for animation. Hover on the options to see more info"
+            "info": "iter = seed increments each frame (smooth evolution). fixed = same seed every frame (stable). random = new seed every frame (chaotic). schedule = set seed per keyframe for full control."
         },
         "seed_iter_N": {
             "label": "Seed iter N",
@@ -824,7 +824,7 @@ def DeforumArgs():
         "init_image": {
             "label": "Init image URL",
             "type": "textbox",
-            "value": "https://deforum.github.io/a1/I1.png",
+            "value": "",
             "info": "Use web address or local path. Note: if the image box below is used then this field is ignored."
         },
         "init_image_box": {
@@ -850,7 +850,7 @@ def DeforumArgs():
         "mask_file": {
             "label": "Mask file",
             "type": "textbox",
-            "value": "https://deforum.github.io/a1/M1.jpg",
+            "value": "",
             "info": ""
         },
         "invert_mask": {
@@ -1042,7 +1042,7 @@ def DeforumOutputArgs():
         "soundtrack_path": {
             "label": "Soundtrack path",
             "type": "textbox",
-            "value": "https://deforum.github.io/a1/A1.mp3",
+            "value": "",
             "info": "abs. path or url to audio file"
         },
         "r_upscale_video": {

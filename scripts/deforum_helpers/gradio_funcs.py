@@ -226,6 +226,56 @@ def disable_by_hybrid_composite_dynamic(choice, comp_mask_type):
 def disable_by_non_optical_flow(choice):
     return gr.update(visible=False) if choice != 'Optical Flow' else gr.update(visible=True)
 
+# Settings Sync functions for Editor and Upload
+def sync_ui_to_editor(*args):
+    import json
+    from .args import get_settings_component_names, DeforumArgs, DeforumAnimArgs, ParseqArgs, LoopArgs, DeforumOutputArgs, pack_args
+    from .deforum_controlnet import controlnet_component_names
+    from .settings import get_keys_to_exclude
+
+    settings_component_names = get_settings_component_names()
+    data = {settings_component_names[i]: args[i] for i in range(len(settings_component_names))}
+    
+    args_dict = pack_args(data, DeforumArgs)
+    anim_args_dict = pack_args(data, DeforumAnimArgs)
+    parseq_dict = pack_args(data, ParseqArgs)
+    try:
+        args_dict["prompts"] = json.loads(data.get('animation_prompts', '{}'))
+    except:
+        args_dict["prompts"] = {}
+    args_dict["animation_prompts_positive"] = data.get('animation_prompts_positive', '')
+    args_dict["animation_prompts_negative"] = data.get('animation_prompts_negative', '')
+    loop_dict = pack_args(data, LoopArgs)
+    controlnet_dict = pack_args(data, controlnet_component_names)
+    video_args_dict = pack_args(data, DeforumOutputArgs)
+    
+    combined = {**args_dict, **anim_args_dict, **parseq_dict, **loop_dict, **controlnet_dict, **video_args_dict}
+    exclude_keys = get_keys_to_exclude()
+    filtered_combined = {k: v for k, v in combined.items() if k not in exclude_keys}
+    
+    return json.dumps(filtered_combined, ensure_ascii=False, indent=4)
+
+def sync_editor_to_ui(json_str, *args):
+    import json
+    from .settings import load_all_settings
+    jdata = json.loads(json_str) if isinstance(json_str, str) else json_str
+    # ui_launch=False returns a list of values matching the components, plus an empty string for the path at the end.
+    # We slice [:-1] to remove the empty string and match the exact length of settings_component_list.
+    return load_all_settings(None, *args, ui_launch=False, jdata=jdata)[:-1]
+
+def process_settings_upload(file_obj, *args):
+    import json
+    if not file_obj:
+        return [gr.update() for _ in args]
+    try:
+        with open(file_obj.name, 'r', encoding='utf-8') as f:
+            jdata = json.load(f)
+        from .settings import load_all_settings
+        return load_all_settings(None, *args, ui_launch=False, jdata=jdata)[:-1]
+    except Exception as e:
+        print(f"Error loading settings from file upload: {e}")
+        return [gr.update() for _ in args]
+
 # Upscaling Gradio UI related funcs
 def vid_upscale_gradio_update_stats(vid_path, upscale_factor):
     if not vid_path:

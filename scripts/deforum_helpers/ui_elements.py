@@ -110,197 +110,200 @@ def get_tab_keyframes(d, da, dloopArgs):
                     tweening_frames_schedule = create_gr_elem(dloopArgs.tweening_frames_schedule)
                 with FormRow():
                     color_correction_factor = create_gr_elem(dloopArgs.color_correction_factor)
-        # EXTRA SCHEDULES TABS
-        with gr.Tabs():
-            with gr.TabItem('Strength'):
-                with FormRow():
-                    strength_schedule = create_gr_elem(da.strength_schedule)
-            with gr.TabItem('CFG'):
-                with FormRow():
-                    cfg_scale_schedule = create_gr_elem(da.cfg_scale_schedule)
-                with FormRow():
-                    enable_clipskip_scheduling = create_gr_elem(da.enable_clipskip_scheduling)
-                with FormRow():
-                    clipskip_schedule = create_gr_elem(da.clipskip_schedule)
-            with gr.TabItem('Seed'):
-                with FormRow():
-                    seed_behavior = create_gr_elem(d.seed_behavior)
-                with FormRow() as seed_iter_N_row:
-                    seed_iter_N = create_gr_elem(d.seed_iter_N)
-                with FormRow(visible=False) as seed_schedule_row:
-                    seed_schedule = create_gr_elem(da.seed_schedule)
-            with gr.TabItem('SubSeed', open=False) as subseed_sch_tab:
-                with FormRow():
-                    enable_subseed_scheduling = create_gr_elem(da.enable_subseed_scheduling)
-                    subseed_schedule = create_gr_elem(da.subseed_schedule)
-                    subseed_strength_schedule = create_gr_elem(da.subseed_strength_schedule)
-                with FormRow():
-                    seed_resize_from_w = create_gr_elem(d.seed_resize_from_w)
-                    seed_resize_from_h = create_gr_elem(d.seed_resize_from_h)
-            # Steps Scheduling
-            with gr.TabItem('Step'):
-                with FormRow():
-                    enable_steps_scheduling = create_gr_elem(da.enable_steps_scheduling)
-                with FormRow():
-                    steps_schedule = create_gr_elem(da.steps_schedule)
-            # Sampler Scheduling
-            with gr.TabItem('Sampler'):
-                with FormRow():
-                    enable_sampler_scheduling = create_gr_elem(da.enable_sampler_scheduling)
-                with FormRow():
-                    sampler_schedule = create_gr_elem(da.sampler_schedule)
-            # Checkpoint Scheduling
-            with gr.TabItem('Checkpoint'):
-                with FormRow():
-                    enable_checkpoint_scheduling = create_gr_elem(da.enable_checkpoint_scheduling)
-                with FormRow():
-                    checkpoint_schedule = create_gr_elem(da.checkpoint_schedule)
-        # MOTION INNER TAB
-        refresh_symbol = '\U0001f504'  # 🔄
-        with gr.Tabs(elem_id='motion_noise_etc'):
-            with gr.TabItem('Motion') as motion_tab:
-                with FormColumn() as only_2d_motion_column:
-                    with FormRow(variant="compact"):
-                        zoom = create_gr_elem(da.zoom)
-                        reset_zoom_button = ToolButton(elem_id='reset_zoom_btn', value=refresh_symbol, tooltip="Reset zoom to static.")
-                        components['zoom'] = zoom
+        with FormRow(elem_id='strength_motion_row', equal_height=False):
+            with FormColumn(min_width=200):
+                # EXTRA SCHEDULES TABS
+                with gr.Tabs(elem_id='strength_schedule_tabs'):
+                    with gr.TabItem('Strength'):
+                        with FormRow():
+                            strength_schedule = create_gr_elem(da.strength_schedule)
+                    with gr.TabItem('CFG'):
+                        with FormRow():
+                            cfg_scale_schedule = create_gr_elem(da.cfg_scale_schedule)
+                        with FormRow():
+                            enable_clipskip_scheduling = create_gr_elem(da.enable_clipskip_scheduling)
+                        with FormRow():
+                            clipskip_schedule = create_gr_elem(da.clipskip_schedule)
+                    with gr.TabItem('Seed'):
+                        with FormRow():
+                            seed_behavior = create_gr_elem(d.seed_behavior)
+                        with FormRow() as seed_iter_N_row:
+                            seed_iter_N = create_gr_elem(d.seed_iter_N)
+                        with FormRow(visible=False) as seed_schedule_row:
+                            seed_schedule = create_gr_elem(da.seed_schedule)
+                    with gr.TabItem('SubSeed', open=False) as subseed_sch_tab:
+                        with FormRow():
+                            enable_subseed_scheduling = create_gr_elem(da.enable_subseed_scheduling)
+                            subseed_schedule = create_gr_elem(da.subseed_schedule)
+                            subseed_strength_schedule = create_gr_elem(da.subseed_strength_schedule)
+                        with FormRow():
+                            seed_resize_from_w = create_gr_elem(d.seed_resize_from_w)
+                            seed_resize_from_h = create_gr_elem(d.seed_resize_from_h)
+                    # Steps Scheduling
+                    with gr.TabItem('Step'):
+                        with FormRow():
+                            enable_steps_scheduling = create_gr_elem(da.enable_steps_scheduling)
+                        with FormRow():
+                            steps_schedule = create_gr_elem(da.steps_schedule)
+                    # Sampler Scheduling
+                    with gr.TabItem('Sampler'):
+                        with FormRow():
+                            enable_sampler_scheduling = create_gr_elem(da.enable_sampler_scheduling)
+                        with FormRow():
+                            sampler_schedule = create_gr_elem(da.sampler_schedule)
+                    # Checkpoint Scheduling
+                    with gr.TabItem('Checkpoint'):
+                        with FormRow():
+                            enable_checkpoint_scheduling = create_gr_elem(da.enable_checkpoint_scheduling)
+                        with FormRow():
+                            checkpoint_schedule = create_gr_elem(da.checkpoint_schedule)
+            with FormColumn(min_width=200):
+                # MOTION INNER TAB
+                refresh_symbol = '\U0001f504'  # 🔄
+                with gr.Tabs(elem_id='motion_noise_etc'):
+                    with gr.TabItem('Motion') as motion_tab:
+                        with FormColumn() as only_2d_motion_column:
+                            with FormRow(variant="compact"):
+                                zoom = create_gr_elem(da.zoom)
+                                reset_zoom_button = ToolButton(elem_id='reset_zoom_btn', value=refresh_symbol, tooltip="Reset zoom to static.")
+                                components['zoom'] = zoom
 
-                        def reset_zoom_field():
-                            return {
-                                zoom: gr.update(value='0:(1)', visible=True)
-                            }
+                                def reset_zoom_field():
+                                    return {
+                                        zoom: gr.update(value='0:(1)', visible=True)
+                                    }
 
-                        reset_zoom_button.click(
-                            fn=reset_zoom_field,
-                            inputs=[],
-                            outputs=[zoom]
-                        )
-                    with FormRow():
-                        angle = create_gr_elem(da.angle)
-                    with FormRow():
-                        transform_center_x = create_gr_elem(da.transform_center_x)
-                    with FormRow():
-                        transform_center_y = create_gr_elem(da.transform_center_y)
-                with FormColumn() as both_anim_mode_motion_params_column:
-                    with FormRow():
-                        translation_x = create_gr_elem(da.translation_x)
-                    with FormRow():
-                        translation_y = create_gr_elem(da.translation_y)
-                with FormColumn(visible=False) as only_3d_motion_column:
-                    with FormRow():
-                        translation_z = create_gr_elem(da.translation_z)
-                        reset_tr_z_button = ToolButton(elem_id='reset_tr_z_btn', value=refresh_symbol, tooltip="Reset translation Z to static.")
-                        components['tr_z'] = translation_z
+                                reset_zoom_button.click(
+                                    fn=reset_zoom_field,
+                                    inputs=[],
+                                    outputs=[zoom]
+                                )
+                            with FormRow():
+                                angle = create_gr_elem(da.angle)
+                            with FormRow():
+                                transform_center_x = create_gr_elem(da.transform_center_x)
+                            with FormRow():
+                                transform_center_y = create_gr_elem(da.transform_center_y)
+                        with FormColumn() as both_anim_mode_motion_params_column:
+                            with FormRow():
+                                translation_x = create_gr_elem(da.translation_x)
+                            with FormRow():
+                                translation_y = create_gr_elem(da.translation_y)
+                        with FormColumn(visible=False) as only_3d_motion_column:
+                            with FormRow():
+                                translation_z = create_gr_elem(da.translation_z)
+                                reset_tr_z_button = ToolButton(elem_id='reset_tr_z_btn', value=refresh_symbol, tooltip="Reset translation Z to static.")
+                                components['tr_z'] = translation_z
 
-                        def reset_tr_z_field():
-                            return {
-                                translation_z: gr.update(value='0:(0)', visible=True)
-                            }
+                                def reset_tr_z_field():
+                                    return {
+                                        translation_z: gr.update(value='0:(0)', visible=True)
+                                    }
 
-                        reset_tr_z_button.click(
-                            fn=reset_tr_z_field,
-                            inputs=[],
-                            outputs=[translation_z]
-                        )
-                    with FormRow():
-                        rotation_3d_x = create_gr_elem(da.rotation_3d_x)
-                    with FormRow():
-                        rotation_3d_y = create_gr_elem(da.rotation_3d_y)
-                    with FormRow():
-                        rotation_3d_z = create_gr_elem(da.rotation_3d_z)
-                # PERSPECTIVE FLIP - inner params are hidden if not enabled
-                with FormRow() as enable_per_f_row:
-                    enable_perspective_flip = create_gr_elem(da.enable_perspective_flip)
-                with FormRow(visible=False) as per_f_th_row:
-                    perspective_flip_theta = create_gr_elem(da.perspective_flip_theta)
-                with FormRow(visible=False) as per_f_ph_row:
-                    perspective_flip_phi = create_gr_elem(da.perspective_flip_phi)
-                with FormRow(visible=False) as per_f_ga_row:
-                    perspective_flip_gamma = create_gr_elem(da.perspective_flip_gamma)
-                with FormRow(visible=False) as per_f_f_row:
-                    perspective_flip_fv = create_gr_elem(da.perspective_flip_fv)
+                                reset_tr_z_button.click(
+                                    fn=reset_tr_z_field,
+                                    inputs=[],
+                                    outputs=[translation_z]
+                                )
+                            with FormRow():
+                                rotation_3d_x = create_gr_elem(da.rotation_3d_x)
+                            with FormRow():
+                                rotation_3d_y = create_gr_elem(da.rotation_3d_y)
+                            with FormRow():
+                                rotation_3d_z = create_gr_elem(da.rotation_3d_z)
+                        # PERSPECTIVE FLIP - inner params are hidden if not enabled
+                        with FormRow() as enable_per_f_row:
+                            enable_perspective_flip = create_gr_elem(da.enable_perspective_flip)
+                        with FormRow(visible=False) as per_f_th_row:
+                            perspective_flip_theta = create_gr_elem(da.perspective_flip_theta)
+                        with FormRow(visible=False) as per_f_ph_row:
+                            perspective_flip_phi = create_gr_elem(da.perspective_flip_phi)
+                        with FormRow(visible=False) as per_f_ga_row:
+                            perspective_flip_gamma = create_gr_elem(da.perspective_flip_gamma)
+                        with FormRow(visible=False) as per_f_f_row:
+                            perspective_flip_fv = create_gr_elem(da.perspective_flip_fv)
 
-            # NOISE INNER TAB
-            with gr.TabItem('Noise'):
-                with FormColumn() as noise_tab_column:
-                    with FormRow():
-                        noise_type = create_gr_elem(da.noise_type)
-                    with FormRow():
-                        noise_schedule = create_gr_elem(da.noise_schedule)
-                    with FormRow() as perlin_row:
-                        with FormColumn(min_width=220):
-                            perlin_octaves = create_gr_elem(da.perlin_octaves)
-                        with FormColumn(min_width=220):
-                            perlin_persistence = create_gr_elem(da.perlin_persistence)
-                            # following two params are INVISIBLE IN UI as of 21-05-23
-                            perlin_w = create_gr_elem(da.perlin_w)
-                            perlin_h = create_gr_elem(da.perlin_h)
-                    with FormRow():
-                        enable_noise_multiplier_scheduling = create_gr_elem(da.enable_noise_multiplier_scheduling)
-                    with FormRow():
-                        noise_multiplier_schedule = create_gr_elem(da.noise_multiplier_schedule)
-            # COHERENCE INNER TAB
-            with gr.TabItem('Coherence', open=False) as coherence_accord:
-                with FormRow():
-                    color_coherence = create_gr_elem(da.color_coherence)
-                    color_force_grayscale = create_gr_elem(da.color_force_grayscale)
-                with FormRow():
-                    legacy_colormatch = create_gr_elem(da.legacy_colormatch)
-                with FormRow(visible=False) as color_coherence_image_path_row:
-                    color_coherence_image_path = create_gr_elem(da.color_coherence_image_path)
-                with FormRow(visible=False) as color_coherence_video_every_N_frames_row:
-                    color_coherence_video_every_N_frames = create_gr_elem(da.color_coherence_video_every_N_frames)
-                with FormRow() as optical_flow_cadence_row:
-                    with FormColumn(min_width=220) as optical_flow_cadence_column:
-                        optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
-                    with FormColumn(min_width=220, visible=False) as cadence_flow_factor_schedule_column:
-                        cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
-                with FormRow():
-                    with FormColumn(min_width=220):
-                        optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
-                    with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
-                        redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
-                with FormRow():
-                    contrast_schedule = gr.Textbox(label="Contrast schedule", lines=1, value=da.contrast_schedule, interactive=True,
-                                                   info="adjusts the overall contrast per frame [neutral at 1.0, recommended to *not* play with this param]")
-                    diffusion_redo = gr.Slider(label="Redo generation", minimum=0, maximum=50, step=1, value=da.diffusion_redo, interactive=True,
-                                               info="this option renders N times before the final render. it is suggested to lower your steps if you up your redo. seed is randomized during redo generations and restored afterwards")
-                with FormRow():
-                    # what to do with blank frames (they may result from glitches or the NSFW filter being turned on): reroll with +1 seed, interrupt the animation generation, or do nothing
-                    reroll_blank_frames = create_gr_elem(d.reroll_blank_frames)
-                    reroll_patience = create_gr_elem(d.reroll_patience)
-            # ANTI BLUR INNER TAB
-            with gr.TabItem('Anti Blur', elem_id='anti_blur_accord') as anti_blur_tab:
-                with FormRow():
-                    amount_schedule = create_gr_elem(da.amount_schedule)
-                with FormRow():
-                    kernel_schedule = create_gr_elem(da.kernel_schedule)
-                with FormRow():
-                    sigma_schedule = create_gr_elem(da.sigma_schedule)
-                with FormRow():
-                    threshold_schedule = create_gr_elem(da.threshold_schedule)
-            with gr.TabItem('Depth Warping & FOV', elem_id='depth_warp_fov_tab') as depth_warp_fov_tab:
-                # this html only shows when not in 2d/3d mode
-                depth_warp_msg_html = gr.HTML(value='Please switch to 3D animation mode to view this section.', elem_id='depth_warp_msg_html')
-                with FormRow(visible=False) as depth_warp_row_1:
-                    use_depth_warping = create_gr_elem(da.use_depth_warping)
-                    # *the following html only shows when LeReS depth is selected*
-                    leres_license_msg = gr.HTML(value=get_gradio_html('leres'), visible=False, elem_id='leres_license_msg')
-                    depth_algorithm = create_gr_elem(da.depth_algorithm)
-                    midas_weight = create_gr_elem(da.midas_weight)
-                with FormRow(visible=False) as depth_warp_row_2:
-                    padding_mode = create_gr_elem(da.padding_mode)
-                    sampling_mode = create_gr_elem(da.sampling_mode)
-                with FormRow(visible=False) as depth_warp_row_3:
-                    aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
-                with FormRow(visible=False) as depth_warp_row_4:
-                    aspect_ratio_schedule = create_gr_elem(da.aspect_ratio_schedule)
-                with FormRow(visible=False) as depth_warp_row_5:
-                    fov_schedule = create_gr_elem(da.fov_schedule)
-                with FormRow(visible=False) as depth_warp_row_6:
-                    near_schedule = create_gr_elem(da.near_schedule)
-                with FormRow(visible=False) as depth_warp_row_7:
-                    far_schedule = create_gr_elem(da.far_schedule)
+                    # NOISE INNER TAB
+                    with gr.TabItem('Noise'):
+                        with FormColumn() as noise_tab_column:
+                            with FormRow():
+                                noise_type = create_gr_elem(da.noise_type)
+                            with FormRow():
+                                noise_schedule = create_gr_elem(da.noise_schedule)
+                            with FormRow() as perlin_row:
+                                with FormColumn(min_width=220):
+                                    perlin_octaves = create_gr_elem(da.perlin_octaves)
+                                with FormColumn(min_width=220):
+                                    perlin_persistence = create_gr_elem(da.perlin_persistence)
+                                    # following two params are INVISIBLE IN UI as of 21-05-23
+                                    perlin_w = create_gr_elem(da.perlin_w)
+                                    perlin_h = create_gr_elem(da.perlin_h)
+                            with FormRow():
+                                enable_noise_multiplier_scheduling = create_gr_elem(da.enable_noise_multiplier_scheduling)
+                            with FormRow():
+                                noise_multiplier_schedule = create_gr_elem(da.noise_multiplier_schedule)
+                    # COHERENCE INNER TAB
+                    with gr.TabItem('Coherence', open=False) as coherence_accord:
+                        with FormRow():
+                            color_coherence = create_gr_elem(da.color_coherence)
+                            color_force_grayscale = create_gr_elem(da.color_force_grayscale)
+                        with FormRow():
+                            legacy_colormatch = create_gr_elem(da.legacy_colormatch)
+                        with FormRow(visible=False) as color_coherence_image_path_row:
+                            color_coherence_image_path = create_gr_elem(da.color_coherence_image_path)
+                        with FormRow(visible=False) as color_coherence_video_every_N_frames_row:
+                            color_coherence_video_every_N_frames = create_gr_elem(da.color_coherence_video_every_N_frames)
+                        with FormRow() as optical_flow_cadence_row:
+                            with FormColumn(min_width=220) as optical_flow_cadence_column:
+                                optical_flow_cadence = create_gr_elem(da.optical_flow_cadence)
+                            with FormColumn(min_width=220, visible=False) as cadence_flow_factor_schedule_column:
+                                cadence_flow_factor_schedule = create_gr_elem(da.cadence_flow_factor_schedule)
+                        with FormRow():
+                            with FormColumn(min_width=220):
+                                optical_flow_redo_generation = create_gr_elem(da.optical_flow_redo_generation)
+                            with FormColumn(min_width=220, visible=False) as redo_flow_factor_schedule_column:
+                                redo_flow_factor_schedule = create_gr_elem(da.redo_flow_factor_schedule)
+                        with FormRow():
+                            contrast_schedule = gr.Textbox(label="Contrast schedule", lines=1, value=da.contrast_schedule, interactive=True,
+                                                           info="adjusts the overall contrast per frame [neutral at 1.0, recommended to *not* play with this param]")
+                            diffusion_redo = gr.Slider(label="Redo generation", minimum=0, maximum=50, step=1, value=da.diffusion_redo, interactive=True,
+                                                       info="this option renders N times before the final render. it is suggested to lower your steps if you up your redo. seed is randomized during redo generations and restored afterwards")
+                        with FormRow():
+                            # what to do with blank frames (they may result from glitches or the NSFW filter being turned on): reroll with +1 seed, interrupt the animation generation, or do nothing
+                            reroll_blank_frames = create_gr_elem(d.reroll_blank_frames)
+                            reroll_patience = create_gr_elem(d.reroll_patience)
+                    # ANTI BLUR INNER TAB
+                    with gr.TabItem('Anti Blur', elem_id='anti_blur_accord') as anti_blur_tab:
+                        with FormRow():
+                            amount_schedule = create_gr_elem(da.amount_schedule)
+                        with FormRow():
+                            kernel_schedule = create_gr_elem(da.kernel_schedule)
+                        with FormRow():
+                            sigma_schedule = create_gr_elem(da.sigma_schedule)
+                        with FormRow():
+                            threshold_schedule = create_gr_elem(da.threshold_schedule)
+                    with gr.TabItem('Depth Warping & FOV', elem_id='depth_warp_fov_tab') as depth_warp_fov_tab:
+                        # this html only shows when not in 2d/3d mode
+                        depth_warp_msg_html = gr.HTML(value='Please switch to 3D animation mode to view this section.', elem_id='depth_warp_msg_html')
+                        with FormRow(visible=False) as depth_warp_row_1:
+                            use_depth_warping = create_gr_elem(da.use_depth_warping)
+                            # *the following html only shows when LeReS depth is selected*
+                            leres_license_msg = gr.HTML(value=get_gradio_html('leres'), visible=False, elem_id='leres_license_msg')
+                            depth_algorithm = create_gr_elem(da.depth_algorithm)
+                            midas_weight = create_gr_elem(da.midas_weight)
+                        with FormRow(visible=False) as depth_warp_row_2:
+                            padding_mode = create_gr_elem(da.padding_mode)
+                            sampling_mode = create_gr_elem(da.sampling_mode)
+                        with FormRow(visible=False) as depth_warp_row_3:
+                            aspect_ratio_use_old_formula = create_gr_elem(da.aspect_ratio_use_old_formula)
+                        with FormRow(visible=False) as depth_warp_row_4:
+                            aspect_ratio_schedule = create_gr_elem(da.aspect_ratio_schedule)
+                        with FormRow(visible=False) as depth_warp_row_5:
+                            fov_schedule = create_gr_elem(da.fov_schedule)
+                        with FormRow(visible=False) as depth_warp_row_6:
+                            near_schedule = create_gr_elem(da.near_schedule)
+                        with FormRow(visible=False) as depth_warp_row_7:
+                            far_schedule = create_gr_elem(da.far_schedule)
 
     return {k: v for k, v in {**locals(), **vars()}.items()}
 
@@ -344,6 +347,12 @@ def get_tab_init(d, da, dp):
                 init_image = create_gr_elem(d.init_image)
             with FormRow():
                 init_image_box = create_gr_elem(d.init_image_box)
+            # Auto-enable "Use init" when an image is dropped in the box
+            init_image_box.change(
+                fn=lambda img: gr.update(value=True) if img is not None else gr.update(),
+                inputs=[init_image_box],
+                outputs=[use_init]
+            )
         # VIDEO INIT INNER-TAB
         with gr.Tab('Video Init'):
             with FormRow():

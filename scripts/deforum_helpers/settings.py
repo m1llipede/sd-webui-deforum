@@ -71,8 +71,8 @@ def save_settings_from_animation_run(args, anim_args, parseq_args, loop_args, co
         s = {}
         for d in (args.__dict__, anim_args.__dict__, parseq_args.__dict__, loop_args.__dict__, controlnet_args.__dict__, video_args.__dict__):
             s.update({k: v for k, v in d.items() if k not in exclude_keys})
-        s["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name
-        s["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash
+        s["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name if sh.sd_model else "unknown"
+        s["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash if sh.sd_model else "unknown"
         s["deforum_git_commit_id"] = get_deforum_version()
         json.dump(s, f, ensure_ascii=False, indent=4)
 
@@ -95,8 +95,8 @@ def save_settings(*args, **kwargs):
     combined = {**args_dict, **anim_args_dict, **parseq_dict, **loop_dict, **controlnet_dict, **video_args_dict}
     exclude_keys = get_keys_to_exclude()
     filtered_combined = {k: v for k, v in combined.items() if k not in exclude_keys}
-    filtered_combined["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name
-    filtered_combined["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash
+    filtered_combined["sd_model_name"] = sh.sd_model.sd_checkpoint_info.name if sh.sd_model else "unknown"
+    filtered_combined["sd_model_hash"] = sh.sd_model.sd_checkpoint_info.hash if sh.sd_model else "unknown"
     filtered_combined["deforum_git_commit_id"] = get_deforum_version()
     print(f"saving custom settings to {settings_path}")
     with open(settings_path, "w", encoding='utf-8') as f:
@@ -104,27 +104,37 @@ def save_settings(*args, **kwargs):
     
     return [""]
 
-def load_all_settings(*args, ui_launch=False, **kwargs):
+def load_all_settings(*args, ui_launch=False, jdata=None, **kwargs):
     import gradio as gr
-    settings_path = args[0].strip()
+    settings_path = args[0].strip() if not jdata else ""
     settings_path = clean_gradio_path_strings(settings_path)
     settings_path = os.path.realpath(settings_path)
     settings_component_names = get_settings_component_names()
     data = {settings_component_names[i]: args[i+1] for i in range(len(settings_component_names))}
-    print(f"reading custom settings from {settings_path}")
+    
+    if not jdata:
+        print(f"reading custom settings from {settings_path}")
+        if not os.path.isfile(settings_path):
+            print('The custom settings file does not exist. The values will be unchanged.')
+            if ui_launch:
+                return ({key: gr.update(value=value) for key, value in data.items()},)
+            else:
+                return list(data.values()) + [""]
 
-    if not os.path.isfile(settings_path):
-        print('The custom settings file does not exist. The values will be unchanged.')
-        if ui_launch:
-            return ({key: gr.update(value=value) for key, value in data.items()},)
-        else:
-            return list(data.values()) + [""]
-
-    with open(settings_path, "r", encoding='utf-8') as f:
-        jdata = json.load(f)
-        handle_deprecated_settings(jdata)
-        if 'animation_prompts' in jdata:
-            jdata['prompts'] = jdata['animation_prompts']
+        with open(settings_path, "r", encoding='utf-8') as f:
+            try:
+                jdata = json.load(f)
+            except Exception as e:
+                print(f"Error loading settings file: {e}")
+                if ui_launch: return ({key: gr.update(value=value) for key, value in data.items()},)
+                else: return list(data.values()) + [""]
+                
+    handle_deprecated_settings(jdata)
+    if 'animation_prompts' in jdata:
+        jdata['prompts'] = jdata['animation_prompts']
+    elif 'prompts' not in jdata and 'animation_prompts' not in jdata:
+        # if prompts are missing entirely, don't overwrite current ones
+        jdata['prompts'] = json.loads(data.get('animation_prompts', '{}'))
 
     result = {}
     for key, default_val in data.items():
@@ -159,19 +169,24 @@ def load_all_settings(*args, ui_launch=False, **kwargs):
         return list(result.values()) + [""]
 
 
-def load_video_settings(*args, **kwargs):
-    video_settings_path = args[0].strip()
+def load_video_settings(*args, jdata=None, **kwargs):
+    video_settings_path = args[0].strip() if not jdata else ""
     vid_args_names = list(DeforumOutputArgs().keys())
     data = {vid_args_names[i]: args[i+1] for i in range(0, len(vid_args_names))}
-    print(f"reading custom video settings from {video_settings_path}")
-    jdata = {}
-    if not os.path.isfile(video_settings_path):
-        print('The custom video settings file does not exist. The values will be unchanged.')
-        return [data[name] for name in vid_args_names] + [""]
-    else:
-        with open(video_settings_path, "r") as f:
-            jdata = json.loads(f.read())
-            handle_deprecated_settings(jdata)
+    
+    if not jdata:
+        print(f"reading custom video settings from {video_settings_path}")
+        if not os.path.isfile(video_settings_path):
+            print('The custom video settings file does not exist. The values will be unchanged.')
+            return [data[name] for name in vid_args_names] + [""]
+        else:
+            with open(video_settings_path, "r") as f:
+                try:
+                    jdata = json.loads(f.read())
+                except Exception as e:
+                    print(f"Error loading video settings: {e}")
+                    return [data[name] for name in vid_args_names] + [""]
+                handle_deprecated_settings(jdata)
     ret = []
 
     for key in data:
