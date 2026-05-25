@@ -124,6 +124,26 @@ def on_ui_tabs():
                     load_settings_btn = gr.Button('Load All Settings', elem_id='deforum_load_settings_btn')
                     load_video_settings_btn = gr.Button('Load Video Settings', elem_id='deforum_load_video_settings_btn')
 
+                # Quick Tools accordion
+                with gr.Accordion("Quick Tools", open=False, elem_id='deforum_quick_tools'):
+                    # 1. Quick-load recent settings files
+                    with gr.Row(variant='compact'):
+                        recent_files_dd = gr.Dropdown(label="Recent Settings Files", choices=[], elem_id='deforum_recent_files', interactive=True)
+                        refresh_recent_btn = gr.Button("Refresh List", elem_id='deforum_refresh_recent', scale=0)
+                    # 2. Prompt preview at frame N
+                    with gr.Row(variant='compact'):
+                        preview_frame = gr.Number(label="Preview prompt at frame", value=0, precision=0, elem_id='deforum_preview_frame')
+                        preview_prompt_btn = gr.Button("Show Active Prompt", elem_id='deforum_preview_prompt_btn', scale=0)
+                    prompt_preview_box = gr.Textbox(label="Active prompt at frame", lines=5, interactive=False, elem_id='deforum_prompt_preview')
+                    # 3. Prompt diff / all keyframes viewer
+                    with gr.Row(variant='compact'):
+                        show_diff_btn = gr.Button("Show All Keyframe Prompts", elem_id='deforum_show_diff_btn')
+                    prompt_diff_html = gr.HTML(elem_id='deforum_prompt_diff')
+                    # 4. Motion curve summary
+                    with gr.Row(variant='compact'):
+                        show_motion_btn = gr.Button("Show Motion Schedule Summary", elem_id='deforum_show_motion_btn')
+                    motion_summary_html = gr.HTML(elem_id='deforum_motion_summary')
+
         component_list = [components[name] for name in get_component_names()]
 
         submit.click(
@@ -205,7 +225,134 @@ def on_ui_tabs():
             inputs=[upload_settings_file] + settings_component_list,
             outputs=settings_component_list,
         )
-        
+
+        # ── Quick Tools wiring ────────────────────────────────────────────────
+
+        # 1. Recent settings file scanner
+        def get_recent_settings_files():
+            import glob, os
+            scan_dirs = [
+                opts.outdir_img2img_samples,
+                os.path.join(opts.outdir_img2img_samples, "Finished and Awesome"),
+                os.path.dirname(opts.outdir_img2img_samples),  # outputs root
+            ]
+            found = []
+            for d in scan_dirs:
+                if os.path.isdir(d):
+                    found.extend(glob.glob(os.path.join(d, "**", "*settings*.txt"), recursive=True))
+                    found.extend(glob.glob(os.path.join(d, "*.txt")))
+            seen, result = set(), []
+            for f in sorted(found, key=lambda x: os.path.getmtime(x) if os.path.exists(x) else 0, reverse=True):
+                if f not in seen:
+                    seen.add(f)
+                    result.append(f)
+            return gr.update(choices=result[:30], value=None)
+
+        refresh_recent_btn.click(fn=get_recent_settings_files, inputs=[], outputs=[recent_files_dd])
+
+        recent_files_dd.change(
+            fn=lambda f: gr.update(value=f) if f else gr.update(),
+            inputs=[recent_files_dd],
+            outputs=[settings_path],
+        ).then(
+            fn=wrap_gradio_call(lambda *args, **kwargs: load_all_settings(*args, ui_launch=False, **kwargs)),
+            inputs=[settings_path] + settings_component_list,
+            outputs=settings_component_list,
+        )
+
+        # 2. Prompt preview at frame N
+        def get_prompt_at_frame(frame_num, prompts_val):
+            import json
+            try:
+                if isinstance(prompts_val, str):
+                    prompts = json.loads(prompts_val)
+                else:
+                    prompts = prompts_val or {}
+                frames = sorted(int(k) for k in prompts.keys())
+                if not frames:
+                    return "No prompts defined."
+                fn = int(frame_num or 0)
+                active = max((f for f in frames if f <= fn), default=frames[0])
+                next_f = next((f for f in frames if f > active), None)
+                header = f"Active keyframe: {active}"
+                if next_f:
+                    header += f"  (next change at frame {next_f})"
+                return f"{header}\n\n{prompts[str(active)]}"
+            except Exception as e:
+                return f"Error parsing prompts: {e}"
+
+        preview_prompt_btn.click(
+            fn=get_prompt_at_frame,
+            inputs=[preview_frame, components['prompts']],
+            outputs=[prompt_preview_box],
+        )
+
+        # 3. All keyframes viewer
+        def show_all_prompts(prompts_val):
+            import json
+            try:
+                if isinstance(prompts_val, str):
+                    prompts = json.loads(prompts_val)
+                else:
+                    prompts = prompts_val or {}
+                frames = sorted(int(k) for k in prompts.keys())
+                if not frames:
+                    return "<p style='color:#888;font-family:sans-serif;'>No prompts defined.</p>"
+                html = "<div style='font-family:Consolas,monospace;font-size:11px;max-height:500px;overflow-y:auto;border:1px solid #d4d4d4;padding:10px;background:#fafafa;border-radius:4px;'>"
+                for i, f in enumerate(frames):
+                    p = str(prompts[str(f)])
+                    next_f = frames[i+1] if i+1 < len(frames) else "end"
+                    html += f"<div style='margin-bottom:12px;border-left:3px solid #217346;padding-left:10px;'>"
+                    html += f"<span style='font-weight:700;color:#217346;font-size:12px;'>Frame {f}</span>"
+                    html += f"<span style='color:#888;font-size:10px;margin-left:10px;'>→ frame {next_f}</span><br><br>"
+                    html += f"<span style='color:#1f2937;white-space:pre-wrap;word-break:break-word;'>{p}</span>"
+                    html += "</div>"
+                html += "</div>"
+                return html
+            except Exception as e:
+                return f"<p style='color:red;'>Error: {e}</p>"
+
+        show_diff_btn.click(
+            fn=show_all_prompts,
+            inputs=[components['prompts']],
+            outputs=[prompt_diff_html],
+        )
+
+        # 4. Motion schedule summary
+        def show_motion_summary(*schedule_vals):
+            import re
+            labels = ['translation_x','translation_y','translation_z',
+                      'rotation_3d_x','rotation_3d_y','rotation_3d_z',
+                      'zoom','angle']
+            def parse_keyframes(s):
+                if not s or not isinstance(s, str):
+                    return {}
+                return {int(m[0]): m[1] for m in re.findall(r'(\d+)\s*:\s*\(([^)]+)\)', s)}
+            html = "<div style='font-family:Consolas,monospace;font-size:11px;border:1px solid #d4d4d4;padding:10px;background:#fafafa;border-radius:4px;'>"
+            html += "<table style='border-collapse:collapse;width:100%;'>"
+            html += "<tr style='background:#217346;color:white;'><th style='padding:4px 8px;text-align:left;'>Parameter</th><th style='padding:4px 8px;text-align:left;'>Keyframes</th></tr>"
+            for i, (label, val) in enumerate(zip(labels, schedule_vals)):
+                kf = parse_keyframes(val)
+                if not kf:
+                    continue
+                bg = '#f9f9f9' if i % 2 == 0 else '#ffffff'
+                kf_str = "  |  ".join(f"f{k}:{v}" for k, v in sorted(kf.items()))
+                html += f"<tr style='background:{bg};'>"
+                html += f"<td style='padding:4px 8px;font-weight:600;color:#217346;white-space:nowrap;'>{label}</td>"
+                html += f"<td style='padding:4px 8px;color:#374151;'>{kf_str}</td></tr>"
+            html += "</table></div>"
+            return html
+
+        motion_keys = ['translation_x','translation_y','translation_z',
+                       'rotation_3d_x','rotation_3d_y','rotation_3d_z',
+                       'zoom','angle']
+        motion_inputs = [components[k] for k in motion_keys if k in components]
+        show_motion_btn.click(
+            fn=show_motion_summary,
+            inputs=motion_inputs,
+            outputs=[motion_summary_html],
+        )
+
     # handle persistent settings - load the persistent file upon UI launch
     def trigger_load_general_settings():
         print("Loading general settings...")
