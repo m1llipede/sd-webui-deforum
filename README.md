@@ -32,8 +32,23 @@ Hover-over descriptions added or improved for:
 - `perspective_flip_theta/phi/gamma` — were blank, now describe the axis each controls
 - `enable_perspective_flip` — explains the 2D-simulates-3D use case
 
+### Compare Tool (Portable)
+- **Deforum Compare** — standalone HTML tool in `tools/Deforum_Compare_Portable/` for reviewing renders side by side. Point it at any folder of Deforum outputs and it scans subfolders, matches videos to settings files, and displays everything in a sortable table with inline video playback.
+  - Star rating and notes per render (persisted in localStorage)
+  - Drag-reorder rows to group interesting renders together
+  - Color-coded columns showing which settings actually vary between renders
+  - Select multiple renders for side-by-side comparison with full settings diff
+  - Render-critical settings (strength, CFG, noise, cadence, optical flow, FOV, depth) sorted to top
+  - Camera motion settings in their own section
+  - "Only show differences" toggle to hide identical parameters
+  - Full-size video stepping with arrow keys
+  - Whole-page zoom control
+  - Works on any Windows machine with Chrome + Python (no install needed)
+  - Launch via `tools/Deforum_Compare_Portable/Launch Deforum Compare.bat`
+
 ### Bug Fixes
 - **Save crash fix** — fixed a NoneType crash when saving settings with no model loaded.
+- **Tab disappearance fix** — Quick Tools accordion referenced non-existent component keys (`prompts` vs `animation_prompts`), causing KeyError on startup. Restored working UI files.
 
 ---
 
