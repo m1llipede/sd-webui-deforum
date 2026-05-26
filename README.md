@@ -1,200 +1,210 @@
 
-# Deforum Stable Diffusion — m1llipede fork
+# Deforum Stable Diffusion -- m1llipede fork
 
-> **Fork of [deforum-art/sd-webui-deforum](https://github.com/deforum-art/sd-webui-deforum)** with UI improvements focused on usability during long render sessions.
+> **Fork of [deforum-art/sd-webui-deforum](https://github.com/deforum-art/sd-webui-deforum)** with UI improvements, workflow tools, and practical documentation focused on usability during long render sessions.
 
-## Changes vs upstream
-
-### Layout & Navigation
-- **Keyframes tab two-column layout** — Strength schedules (Strength / CFG / Seed / SubSeed / Step / Sampler / Checkpoint) and Motion tabs (Motion / Noise / Coherence / Anti-Blur / Depth) now display side-by-side in two columns instead of stacked. See both at the same time without scrolling.
-- **Larger output gallery** — gallery fills ~75% of the viewport so you can actually see what you're rendering.
-
-### Settings File Workflow
-- **Drag & drop settings upload** — drop any `.txt` or `.json` Deforum settings file onto the Upload area; all UI controls populate instantly.
-- **Upload auto-updates path** — the Settings File path textbox now updates to the uploaded file's path automatically, so Save writes back to the correct file.
-- **Save As... button** — saves settings to any filename/path via a popup dialog instead of always overwriting the same file.
-- **Live JSON settings editor** — a full JSON editor is built into the left panel. Click "Load UI to Editor" to see all current settings as JSON, edit directly, then "Apply Editor to UI" to push changes back to all controls.
-
-### Init Image Fix
-- **Init image auto-enables "Use init"** — dropping an image into the Init image box now automatically ticks the "Use init" checkbox. Previously renders would silently ignore the image if the checkbox wasn't manually ticked.
-
-### Depth Settings
-- **MiDaS/Zoe weight always visible** — the MiDaS weight field is now always shown in Depth Warping & FOV. Previously it was hidden unless you selected a legacy depth algorithm from the dropdown.
-
-### Improved Tooltips
-Hover-over descriptions added or improved for:
-- `noise_schedule` — explains what higher/lower values do to per-frame variation
-- `diffusion_cadence` — explains the speed/quality tradeoff (1 = every frame diffused, 2-4 = good balance)
-- `optical_flow_cadence` — explains RAFT vs DIS Fine vs DIS Medium vs Farneback tradeoffs
-- `color_coherence` — explains LAB vs HSV vs RGB vs None and when to use each
-- `seed_behavior` — explains iter / fixed / random / schedule in plain English
-- `midas_weight` — adds range guidance and default recommendation
-- `perspective_flip_theta/phi/gamma` — were blank, now describe the axis each controls
-- `enable_perspective_flip` — explains the 2D-simulates-3D use case
-
-### Compare Tool (Portable)
-- **Deforum Compare** — standalone HTML tool in `tools/Deforum_Compare_Portable/` for reviewing renders side by side. Point it at any folder of Deforum outputs and it scans subfolders, matches videos to settings files, and displays everything in a sortable table with inline video playback.
-  - Star rating and notes per render (persisted in localStorage)
-  - Drag-reorder rows to group interesting renders together
-  - Color-coded columns showing which settings actually vary between renders
-  - Select multiple renders for side-by-side comparison with full settings diff
-  - Render-critical settings (strength, CFG, noise, cadence, optical flow, FOV, depth) sorted to top
-  - Camera motion settings in their own section
-  - "Only show differences" toggle to hide identical parameters
-  - Full-size video stepping with arrow keys
-  - Whole-page zoom control
-  - Works on any Windows machine with Chrome + Python (no install needed)
-  - Launch via `tools/Deforum_Compare_Portable/Launch Deforum Compare.bat`
-
-### Bug Fixes
-- **Save crash fix** — fixed a NoneType crash when saving settings with no model loaded.
-- **Tab disappearance fix** — Quick Tools accordion referenced non-existent component keys (`prompts` vs `animation_prompts`), causing KeyError on startup. Restored working UI files.
+This fork doesn't change the render engine. It only changes the UI and adds tools around it. Everything renders the same as upstream -- you just spend less time fighting the interface and more time iterating.
 
 ---
 
-## Best Practices — Hard-Won Notes from Long Render Sessions
+## Quick Start
 
-These are practical lessons learned from hundreds of hours of Deforum renders, not from docs. Take what's useful.
+```sh
+# Replace the stock Deforum extension with this fork
+cd stable-diffusion-webui/extensions
+rm -rf deforum
+git clone https://github.com/m1llipede/sd-webui-deforum deforum
+```
+
+Restart the WebUI. The Deforum tab will appear with all changes active.
+
+---
+
+## What's Different (vs upstream Deforum)
+
+Every change below is something that was missing, broken, or annoying in the stock extension. Each one is a direct response to real problems encountered during hundreds of hours of render sessions.
+
+### 1. Keyframes Tab -- Two-Column Layout
+
+The Keyframes tab now shows Strength schedules (Strength / CFG / Seed / SubSeed / Step / Sampler / Checkpoint) and Motion tabs (Motion / Noise / Coherence / Anti-Blur / Depth) **side by side** instead of stacked. You can see both without scrolling.
+
+![Keyframes tab with two-column layout](screenshots/deforum-keyframes.png)
+
+### 2. Settings File Workflow -- Save As, Drag & Drop, Live Editor
+
+Stock Deforum makes it hard to manage settings files. This fork adds:
+
+- **Drag & drop upload** -- drop any `.txt` or `.json` settings file onto the Upload area
+- **Upload auto-updates the path** -- so Save writes back to the correct file
+- **Save As... button** -- save settings to any filename/path via popup dialog
+- **Live JSON settings editor** -- full JSON editor built into the left panel
+
+![Run tab with Save As and Upload](screenshots/deforum-run-tab.png)
+
+![Settings Editor tab](screenshots/deforum-settings-editor.png)
+
+### 3. Init Image Auto-Enable
+
+Dropping an image into the Init image box now automatically ticks the "Use init" checkbox. In stock Deforum, renders silently ignore the init image if you forget to manually tick the checkbox.
+
+![Init tab](screenshots/deforum-init-tab.png)
+
+### 4. MiDaS/Zoe Weight Always Visible
+
+The MiDaS weight field is now always shown in Depth Warping & FOV. Stock Deforum hides it unless you select a legacy depth algorithm from the dropdown -- but you almost always want to adjust it.
+
+### 5. Improved Tooltips
+
+Stock Deforum has minimal or empty tooltips on critical fields. This fork adds plain-English descriptions for:
+
+| Field | What the tooltip explains |
+|---|---|
+| `noise_schedule` | What higher/lower values do to per-frame variation |
+| `diffusion_cadence` | Speed/quality tradeoff (1 = every frame, 2-4 = good balance) |
+| `optical_flow_cadence` | RAFT vs DIS Fine vs DIS Medium vs Farneback tradeoffs |
+| `color_coherence` | LAB vs HSV vs RGB vs None and when to use each |
+| `seed_behavior` | iter / fixed / random / schedule in plain English |
+| `midas_weight` | Range guidance and default recommendation |
+| `perspective_flip_*` | Which axis each parameter controls (were blank) |
+| `enable_perspective_flip` | The 2D-simulates-3D use case |
+
+### 6. Bug Fixes
+
+- **Save crash** -- fixed a NoneType crash when saving settings with no model loaded
+- **Tab disappearance** -- Quick Tools accordion referenced non-existent component keys, causing KeyError on startup; restored working UI
+
+### 7. Larger Output Gallery
+
+The gallery fills ~75% of the viewport instead of the cramped default. You can actually see what you're rendering.
+
+---
+
+## Deforum Compare -- Render Comparison Tool
+
+A standalone HTML tool for reviewing and comparing renders side by side. Lives in `tools/Deforum_Compare_Portable/`.
+
+**The problem it solves:** After 20+ test renders with different settings, you need to figure out which combination of strength, CFG, noise, cadence, optical flow, and model produced the best results. Deforum's auto-saved settings files contain 200+ parameters each -- manually diffing them is impossible.
+
+![Compare tool landing page](screenshots/compare-landing.png)
+
+### What it does
+
+1. **Open any folder** of Deforum outputs -- it recursively scans all subfolders
+2. **Matches videos to settings files** automatically (by timestamp and folder name)
+3. **Displays everything in a sortable table** with inline video playback
+4. **Select renders to compare** -- check the boxes and click "Compare Selected"
+5. **Shows a full settings diff** with render-critical parameters (strength, CFG, noise, cadence, FOV, optical flow, depth) sorted to the top, camera motion in its own section, and all remaining parameters below
+6. **"Only show differences" toggle** hides identical parameters so you see only what changed
+
+### Features
+
+- Star rating and notes per render (persisted in browser localStorage)
+- Drag-reorder rows to group interesting renders together
+- Color-coded columns showing which settings vary between renders
+- Full-size video viewer with left/right arrow key navigation
+- Whole-page zoom control (100% / 150% / 200%)
+- Export notes to CSV for sharing
+- No install needed -- works on any machine with Chrome + Python
+
+### How to use it
+
+1. Double-click `tools/Deforum_Compare_Portable/Launch Deforum Compare.bat`
+2. Click "Open Folder" and select your `outputs/img2img-images` directory
+3. Browse, rate, and compare your renders
+
+The .bat starts a tiny Python web server (needed for the folder picker API) and opens Chrome. Keep the command window open while using the tool.
+
+---
+
+## Best Practices -- Notes from Long Render Sessions
+
+Practical lessons from hundreds of hours of Deforum renders. Not from docs -- from actual experience with what works and what doesn't.
 
 ### Sampler & Quality
 
-- **DPM++ 2M SDE + Karras at 40 steps** is the most reliable baseline. Smooth, coherent frame-to-frame, and fast enough for 8000+ frame runs. Don't chase exotic samplers — consistency matters more than peak quality in animation.
-- **Resolution: 1024x1024** for SDXL models. Don't go higher unless you have the VRAM headroom; it slows cadence and rarely improves the animation read at video playback speed.
+- **DPM++ 2M SDE + Karras at 40 steps** is the most reliable baseline. Smooth frame-to-frame, fast enough for 8000+ frame runs.
+- **Resolution: 1024x1024** for SDXL. Higher rarely improves animation at playback speed.
 
 ### Coherence & Motion
 
-- **Diffusion cadence 2-4** is the sweet spot. Cadence 1 (every frame diffused) burns time and often over-cooks motion artifacts. Cadence 2-4 lets optical flow do the heavy lifting between frames while keeping the model's creative contribution where it counts.
-- **Strength 0.80-0.85** is the working range for 3D mode. Lower than 0.78 and the model loses creative grip; higher than 0.88 and you get frame flicker. 0.82 is a reliable default.
-- **Seed behavior: schedule** — lets seed drift organically over time. Fixed seed freezes the aesthetic (useful for locked looks), random seed scrambles coherence. Schedule gives you controlled organic variation.
+- **Diffusion cadence 2-4** is the sweet spot. Cadence 1 burns time and over-cooks artifacts. Cadence 2-4 lets optical flow do the work between frames.
+- **Strength 0.80-0.85** is the working range for 3D mode. Below 0.78 the model loses grip; above 0.88 you get flicker.
+- **Seed behavior: schedule** gives controlled organic variation without the frozen look of fixed seed or the chaos of random.
 
 ### Prompt Keyframing
 
-- **Keyframe every 600-800 frames** for smooth thematic transitions. Tighter than 500 and transitions feel rushed; looser than 1000 and sections feel aimless.
-- **Write prompts as active camera moves** — "Flying into", "Penetrating a", "Soaring through" — this reinforces the motion vectors you set and keeps the model oriented to the 3D movement.
-- **Keep negative prompts consistent across all keyframes.** Changing negatives mid-render causes tonal lurches even if positives are smooth.
+- **Keyframe every 600-800 frames** for smooth transitions. Tighter feels rushed; looser feels aimless.
+- **Write prompts as active camera moves** -- "Flying into", "Penetrating a", "Soaring through" -- reinforces motion vectors.
+- **Keep negative prompts consistent** across all keyframes. Changing them mid-render causes tonal lurches.
 
 ### LoRA Stacking
 
-These LoRAs have proven reliable for psychedelic/visionary/abstract animation work:
+These LoRAs are reliable for psychedelic/visionary/abstract animation work:
 
-| LoRA | Role | Typical weight |
+| LoRA | Role | Weight |
 |---|---|---|
-| `Unfazed_Psychedelic-000009` | Core psychedelic style driver | 0.70-0.85 |
-| `3D_Fractals_wDoF` | Depth-of-field fractal dimension | 0.40-0.50 |
+| `Unfazed_Psychedelic-000009` | Core psychedelic style | 0.70-0.85 |
+| `3D_Fractals_wDoF` | Depth-of-field fractal | 0.40-0.50 |
 | `ral-mndlbrt-sdxl` | Mandelbrot/sacred geometry | 0.45-0.65 |
 | `ral-colorswirl-sdxl` | Vivid color motion | 0.40-0.50 |
-| `ral-hlgrphc-sdxl` | Holographic / diagrammatic overlay | 0.35-0.45 |
+| `ral-hlgrphc-sdxl` | Holographic overlay | 0.35-0.45 |
 | `ral-polygon-sdxl` | Hard geometric structure | 0.45-0.55 |
 | `ral-3dcubes-sdxl` | Isometric cube lattices | 0.40-0.50 |
-| `ral-iricnt-sdxl` | Iridescent surface shimmer | 0.40-0.50 |
+| `ral-iricnt-sdxl` | Iridescent shimmer | 0.40-0.50 |
 | `add-detail-xl` | Global detail enhancement | 0.40-0.60 |
 | `HR_Giger_SDXL` | Biomechanical texture | 0.40-0.55 |
 | `fractalex` | Fractal field extension | 0.40-0.50 |
 
-**Keep total LoRA weight under ~2.0.** Stacking 3-4 LoRAs at moderate weights (0.35-0.55 each) is more stable than 2 LoRAs at high weights. Going over ~2.0 total causes color saturation blowout and geometry instability.
+**Keep total LoRA weight under ~2.0.** 3-4 LoRAs at 0.35-0.55 each is more stable than 2 at high weights.
 
-### Checkpoint Models
-
-All models below are SDXL. Deforum with SDXL requires the Forge fork or a webui build with SDXL support.
+### Checkpoint Models (SDXL)
 
 | Model | Best for |
 |---|---|
-| `juggernautXL_v8Rundiffusion` | Photorealistic base, holds detail well across long runs |
-| `dynavisionXLAllInOneStylized` | Stylized/illustrated renders, great LoRA compatibility |
+| `juggernautXL_v8Rundiffusion` | Photorealistic base, holds detail across long runs |
+| `dynavisionXLAllInOneStylized` | Stylized renders, great LoRA compatibility |
 | `dreamshaperXL_lightningDPMSDE` | Fast, good for motion-heavy sequences |
-| `nightvisionxl_V900` | Dark atmospheric work, Giger-adjacent aesthetics |
-| `RealVisXL_V5.0` | High-realism, clean geometry, pairs well with fractal LoRAs |
+| `nightvisionxl_V900` | Dark atmospheric, Giger-adjacent |
+| `RealVisXL_V5.0` | High-realism, clean geometry |
 | `epicrealismXL_pureFix` | Grounded surrealism, strong structure |
 | `CyberRealisticXL_V9.0` | Sci-fi and tech aesthetics |
 | `MOHAWK_v20` | Stylized character/organic work |
 
-For pure abstract/psychedelic animation, `dynavisionXL` + heavy LoRA stack is the most expressive combination. For structure-forward renders (geometric, diagrammatic), `RealVisXL` or `epicrealismXL` hold form better across 1000+ frames.
+For abstract/psychedelic: `dynavisionXL` + heavy LoRA stack. For structure-forward renders: `RealVisXL` or `epicrealismXL`.
 
-### Settings File Workflow
+### Settings File Workflow Tips
 
-- **Save a named settings file after every render you like.** The auto-save in `outputs/img2img-images/Deforum_*/` is your safety net, but give good runs a real name immediately — you will not remember which timestamp was the good one.
-- **Use the Settings File path box + Save As** to write named presets. Load them back with "Load All Settings" to resume from a known state.
-- **Always check "Use init"** if you're using an init image — or use this fork, which auto-checks it on image drop.
-- The `smooth_master_settings.txt` in the webui root is a working baseline from a successful 8000-frame run. Load it as a starting point.
+- **Name your settings files immediately** after a good render. The auto-save timestamps are impossible to remember.
+- **Use Save As** to write named presets. Load them back with "Load All Settings."
+- The included `smooth_master_settings.txt` is a working baseline from a successful 8000-frame run.
 
 ### 3D Mode Tips
 
-- **Large delay on first frame is normal** — depth models load at render start. Don't interrupt; wait for it.
-- If you get depth artifacts mid-run, the depth model ran out of VRAM. Lower resolution or add `--lowvram` to your webui launch args.
-- **MiDaS weight 0.3-0.5** is a good range. Too high and depth warping dominates motion; too low and 3D parallax disappears.
+- **Large delay on first frame is normal** -- depth models load at render start.
+- **MiDaS weight 0.3-0.5** is a good range. Too high = depth warping dominates; too low = 3D parallax disappears.
+- Depth artifacts mid-run usually mean the depth model ran out of VRAM. Lower resolution or add `--lowvram`.
 
 ---
 
-# Deforum Stable Diffusion — official extension for AUTOMATIC1111's webui
+## Files Changed vs Upstream
 
-<p align="left">
-    <a href="https://github.com/deforum-art/sd-webui-deforum/commits"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/deforum-art/deforum-for-automatic1111-webui"></a>
-    <a href="https://github.com/deforum-art/sd-webui-deforum/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/deforum-art/deforum-for-automatic1111-webui"></a>
-    <a href="https://github.com/deforum-art/sd-webui-deforum/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/deforum-art/deforum-for-automatic1111-webui"></a>
-    <a href="https://github.com/deforum-art/sd-webui-deforum/network"><img alt="GitHub forks" src="https://img.shields.io/github/forks/deforum-art/deforum-for-automatic1111-webui"></a>
-    </a>
-</p>
+| File | What changed |
+|---|---|
+| `scripts/deforum_helpers/ui_right.py` | Settings editor, save-as, drag-drop upload, larger gallery |
+| `scripts/deforum_helpers/ui_left.py` | Two-column keyframes layout |
+| `scripts/deforum_helpers/ui_elements.py` | Improved tooltips, MiDaS weight visibility |
+| `scripts/deforum_helpers/args.py` | Settings editor component registration |
+| `scripts/deforum_helpers/settings.py` | Save-as support, upload path auto-update |
+| `scripts/deforum_helpers/gradio_funcs.py` | JSON editor sync functions (new file) |
+| `scripts/deforum_helpers/render.py` | Init image auto-enable |
+| `scripts/default_settings.txt` | Updated defaults from working render baseline |
+| `style.css` | Gallery height override |
+| `tools/Deforum_Compare_Portable/` | Standalone render comparison tool (new) |
 
-## Need help? See our [FAQ](https://github.com/deforum-art/sd-webui-deforum/wiki/FAQ-&-Troubleshooting)
-
-## Getting Started
-
-1. Install [AUTOMATIC1111's webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui/).
-
-2. Now two ways: either clone the repo into the `extensions` directory via git commandline launched within in the `stable-diffusion-webui` folder
-
-```sh
-git clone https://github.com/deforum-art/sd-webui-deforum extensions/deforum
-```
-
-Or download this repository, locate the `extensions` folder within your WebUI installation, create a folder named `deforum` and put the contents of the downloaded directory inside of it. Then restart WebUI.
-
-Or launch A1111, navigate to the Extensions tab, choose Available, find deforum in the list of available extensions and install it. Restart A1111 once the extension has been installed.
-3. Open the webui, find the Deforum tab at the top of the page.
-
-4. Enter the animation settings. Refer to [this general guide](https://docs.google.com/document/d/1pEobUknMFMkn8F5TMsv8qRzamXX_75BShMMXV8IFslI/edit) and [this guide to math keyframing functions in Deforum](https://docs.google.com/document/d/1pfW1PwbDIuW0cv-dnuyYj1UzPqe23BlSLTJsqazffXM/edit?usp=sharing). However, **in this version prompt weights less than zero don't just like in original Deforum!** Split the positive and the negative prompt in the json section using --neg argument like this "apple:\`where(cos(t)>=0, cos(t), 0)\`, snow --neg strawberry:\`where(cos(t)<0, -cos(t), 0)\`"
-
-5. To view animation frames as they're being made, without waiting for the completion of an animation, go to the 'Settings' tab and set the value of this toolbar **above zero**. Warning: it may slow down the generation process.
-
-![adsdasunknown](https://user-images.githubusercontent.com/14872007/196064311-1b79866a-e55b-438a-84a7-004ff30829ad.png)
-
-
-6. Run the script and see if you got it working or even got something. **In 3D mode a large delay is expected at first** as the script loads the depth models. In the end, using the default settings the whole thing should consume 6.4 GBs of VRAM at 3D mode peaks and no more than 3.8 GB VRAM in 3D mode if you launch the webui with the '--lowvram' command line argument.
-
-7. After the generation process is completed, click the button with the self-describing name to show the video or gif result right in the GUI!
-
-8. Join our Discord where you can post generated stuff, ask questions and more: https://discord.gg/deforum. <br>
-* There's also the 'Issues' tab in the repo, for well... reporting issues ;) 
-
-9. Profit!
-
-## Known issues
-
-* This port is not fully backward-compatible with the notebook and the local version both due to the changes in how AUTOMATIC1111's webui handles Stable Diffusion models and the changes in this script to get it to work in the new environment. *Expect* that you may not get exactly the same result or that the thing may break down because of the older settings.
-
-## Screenshots
-
-Amazing raw Deforum animation by [Pxl.Pshr](https://www.instagram.com/pxl.pshr):
-* Turn Audio ON!
-
-(Audio credits: SKRILLEX, FRED AGAIN & FLOWDAN - RUMBLE (PHACE'S DNB FLIP))
-
-https://user-images.githubusercontent.com/121192995/224450647-39529b28-be04-4871-bb7a-faf7afda2ef2.mp4
-
-Setting file of that video: [here](https://github.com/deforum-art/sd-webui-deforum/files/11353167/PxlPshrWinningAnimationSettings.txt).
-
-<br>
-
-Main extension tab:
-
-![image](https://user-images.githubusercontent.com/121192995/226101131-43bf594a-3152-45dd-a5d1-2538d0bc221d.png)
-
-Keyframes tab:
-
-![image](https://user-images.githubusercontent.com/121192995/226101140-bfe6cce7-9b78-4a1d-be9a-43e1fc78239e.png)
+---
 
 ## License
 
 This program is distributed under the terms of the GNU Affero Public License v3.0, copyright (c) 2023 Deforum LLC.
 
-Some of its sublicensed integrated 3rd party components may have other licenses, see LICENSE for usage terms.
+Fork modifications by [m1llipede](https://github.com/m1llipede).
