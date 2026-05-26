@@ -1,0 +1,49 @@
+DEFORUM COMPARE (PORTABLE)
+==========================
+
+What it does
+------------
+Opens any Deforum output folder (and all its subfolders), finds every render
+video, matches it to its settings file, and shows them all in one table you can
+scroll through. Play videos inline, rate them with stars, write notes, and
+zoom into any one at full size. Notes and ratings save automatically.
+
+
+How to run it
+-------------
+1. Double-click  "Launch Deforum Compare.bat"
+2. A small black window opens and your browser opens the tool.
+   KEEP THE BLACK WINDOW OPEN while you use it. Close it when you're done.
+3. In the browser, click "Open Folder" and pick your Deforum outputs folder.
+4. Click any video (or its blue "Zoom" button) to see it full size.
+   Use the LEFT / RIGHT arrow keys to step through them one by one.
+
+
+Requirements
+------------
+- Windows
+- Google Chrome or Microsoft Edge (NOT Firefox or Safari)
+- Python installed (the same Python the Deforum / Stable Diffusion setup uses).
+  If double-clicking the .bat says "python not found", install Python from
+  python.org and check "Add Python to PATH" during install.
+
+
+Why the black window / local server?
+-------------------------------------
+Browsers only allow the "pick a folder" feature on a real web address
+(http://localhost), not on a file opened directly from disk. The .bat starts a
+tiny local server on your own machine so the folder picker works. Nothing is
+uploaded anywhere — it's 100% local and private.
+
+
+Your notes are private
+----------------------
+Ratings and notes are stored in your own browser only. Nothing leaves your
+computer. To share your notes with someone, use the "Export notes" button to
+save a CSV file and send them that.
+
+
+Sharing this tool
+-----------------
+Send the WHOLE folder (both files). It works from anywhere — Desktop, a USB
+stick, wherever you put it.
