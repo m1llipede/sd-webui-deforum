@@ -33,12 +33,15 @@ def on_ui_tabs():
     i1_store = i1_store_backup
 
     deforum_css = """
-        #deforum_gallery_container { min-height: 80vh; }
-        #deforum_gallery { min-height: 75vh; height: 75vh; }
-        #deforum_gallery > div { height: 100%; }
-        #deforum_gallery button.thumbnail-item { height: 100%; max-height: 75vh; }
-        #deforum_gallery button.thumbnail-item img { object-fit: contain; max-height: 72vh; width: auto; }
-        #deforum_gallery .preview { max-height: 75vh; }
+        /* Gallery starts compact, zoom control scales it */
+        #deforum_gallery_container { min-height: unset !important; }
+        #deforum_gallery { min-height: unset !important; height: 280px !important; transition: height 0.2s; }
+        #deforum_gallery > div { height: 100% !important; }
+        #deforum_gallery button.thumbnail-item { height: 100% !important; }
+        #deforum_gallery button.thumbnail-item img { object-fit: contain !important; height: 100% !important; width: auto !important; }
+        #deforum_zoom_row { position: relative; z-index: 500; }
+        #deforum_preview_zoom { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+        #deforum_preview_zoom button:hover { background: #3a3d56 !important; }
     """
     with gr.Blocks(analytics_enabled=False, css=deforum_css) as deforum_interface:
         components = {}
@@ -104,6 +107,13 @@ def on_ui_tabs():
                         outputs=[],
                     )
                 
+                gr.HTML("""<div id="deforum_preview_zoom">
+                    <span style="font-size:12px;color:#888;margin-right:4px;">Preview:</span>
+                    <button onclick="(function(h){var g=document.getElementById('deforum_gallery');g.style.setProperty('height',h,'important');var lp=g.querySelector('.livePreview');if(lp){lp.style.height='100%';lp.style.width='100%'}window.dispatchEvent(new Event('resize'))})('280px')" style="background:#2b2d42;color:#ccc;border:1px solid #555;border-radius:4px;padding:2px 10px;font-size:12px;cursor:pointer;margin:0 2px;">256</button>
+                    <button onclick="(function(h){var g=document.getElementById('deforum_gallery');g.style.setProperty('height',h,'important');var lp=g.querySelector('.livePreview');if(lp){lp.style.height='100%';lp.style.width='100%'}window.dispatchEvent(new Event('resize'))})('540px')" style="background:#2b2d42;color:#ccc;border:1px solid #555;border-radius:4px;padding:2px 10px;font-size:12px;cursor:pointer;margin:0 2px;">512</button>
+                    <button onclick="(function(h){var g=document.getElementById('deforum_gallery');g.style.setProperty('height',h,'important');var lp=g.querySelector('.livePreview');if(lp){lp.style.height='100%';lp.style.width='100%'}window.dispatchEvent(new Event('resize'))})('1060px')" style="background:#2b2d42;color:#ccc;border:1px solid #555;border-radius:4px;padding:2px 10px;font-size:12px;cursor:pointer;margin:0 2px;">1024</button>
+                    <button onclick="(function(h){var g=document.getElementById('deforum_gallery');g.style.setProperty('height',h,'important');var lp=g.querySelector('.livePreview');if(lp){lp.style.height='100%';lp.style.width='100%'}window.dispatchEvent(new Event('resize'))})('85vh')" style="background:#2b2d42;color:#ccc;border:1px solid #555;border-radius:4px;padding:2px 10px;font-size:12px;cursor:pointer;margin:0 2px;">Full</button>
+                </div>""", elem_id="deforum_zoom_row")
                 output_panel = create_output_panel("deforum", opts.outdir_img2img_samples)
                 if isinstance(output_panel, tuple):
                     deforum_gallery = output_panel[0]
@@ -141,9 +151,26 @@ def on_ui_tabs():
         settings_component_list = [components[name] for name in get_settings_component_names()]
         video_settings_component_list = [components[name] for name in list(DeforumOutputArgs().keys())]
 
-        # Auto-update path textbox when a settings file is uploaded
+        # Auto-update path textbox when a settings file is uploaded.
+        # Reconstruct the proper output path from batch_name inside the settings,
+        # so Save / Save As default to the real output folder, not gradio temp.
+        def update_settings_path_from_upload(f):
+            if f is None:
+                return gr.update()
+            import os, json
+            name = os.path.basename(f.name)
+            try:
+                with open(f.name, 'r', encoding='utf-8') as fh:
+                    data = json.load(fh)
+                batch = data.get('batch_name', '')
+                if batch:
+                    outdir = os.path.join(shared.opts.outdir_img2img_samples or 'outputs/img2img-images', batch)
+                    return gr.update(value=os.path.join(outdir, name))
+            except Exception:
+                pass
+            return gr.update(value=name)
         upload_settings_file.change(
-            fn=lambda f: gr.update(value=f.name) if f is not None else gr.update(),
+            fn=update_settings_path_from_upload,
             inputs=[upload_settings_file],
             outputs=[settings_path],
         )
@@ -154,13 +181,19 @@ def on_ui_tabs():
             outputs=[],
         )
 
-        # Save As: JS prompts for a new filename, injects it into the path box, then saves
+        # Save As: JS prompts for a new filename, strips gradio temp paths to show just the filename
         save_as_settings_btn.click(
             fn=None,
             inputs=[settings_path],
             outputs=[settings_path],
             _js="""(current_path) => {
-                const name = prompt('Save settings as (full path or filename):', current_path || 'deforum_settings.txt');
+                let defaultPath = current_path || 'deforum_settings.txt';
+                // If the path is a gradio temp folder, extract just the filename
+                if (defaultPath.includes('AppData') && defaultPath.includes('gradio')) {
+                    const parts = defaultPath.replace(/\\\\/g, '/').split('/');
+                    defaultPath = parts[parts.length - 1];
+                }
+                const name = prompt('Save settings as (full path or filename):', defaultPath);
                 return name ? name : current_path;
             }"""
         ).then(

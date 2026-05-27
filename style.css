@@ -41,6 +41,25 @@ Contact the authors: https://deforum.github.io/
 	display: none !important;
 }
 
+/* Hide the send-to buttons row under the Deforum gallery (img2img, inpaint, extras icons) */
+#image_buttons_deforum {
+	display: none !important;
+}
+
+/* Live preview: container fills gallery, image maintains aspect ratio */
+#tab_deforum_interface .livePreview {
+	position: absolute !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+}
+#tab_deforum_interface .livePreview img {
+	width: 100% !important;
+	height: calc(100% - 30px) !important;
+	object-fit: contain !important;
+}
+
 #main_top_info_accord .label-wrap {
 	gap:2px;
 	padding: 0.5rem; 
