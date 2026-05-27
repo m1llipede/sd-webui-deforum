@@ -318,9 +318,18 @@ def process_with_controlnet(p, args, anim_args, controlnet_args, root, parseq_ad
     cnet.update_cn_script_in_processing(p, cn_units, is_img2img=is_img2img, is_ui=False)
 
 def find_controlnet_script(p):
-    controlnet_script = next((script for script in p.scripts.alwayson_scripts if script.title().lower()  == "controlnet"), None)
+    controlnet_script = next((script for script in p.scripts.alwayson_scripts if script.title().lower() == "controlnet"), None)
     if not controlnet_script:
-        raise Exception("ControlNet script not found.")
+        registered = []
+        for s in p.scripts.alwayson_scripts:
+            try:
+                registered.append(s.title())
+            except Exception:
+                registered.append("<unknown>")
+        raise Exception(
+            f"ControlNet script not found. {len(p.scripts.alwayson_scripts)} alwayson scripts registered: {', '.join(registered)}. "
+            "Check the WebUI terminal for ControlNet load errors at startup (e.g. mediapipe version conflicts)."
+        )
     return controlnet_script
 
 def process_controlnet_input_frames(args, anim_args, controlnet_args, video_path, mask_path, outdir_suffix, id):

@@ -42,6 +42,10 @@ body { font-family:'Segoe UI', Calibri, sans-serif; background:#f4f5f7; color:#1
   border-top:1px solid #e2e8f0; }
 .welcome .warn { background:#f5e6cc; border:1px solid #e8a87c; border-radius:6px;
   padding:12px 14px; color:#7c5a20; font-size:13px; margin-top:14px; }
+.dropzone { margin-top:20px; border:2px dashed #94a3b8; border-radius:10px; padding:28px 20px;
+  text-align:center; color:#64748b; font-size:14px; cursor:pointer; transition:all .15s; }
+.dropzone:hover, .dropzone.over { border-color:#0ea5e9; background:#f0f9ff; color:#0369a1; }
+.dropzone .hint { font-size:12px; color:#94a3b8; margin-top:6px; }
 
 .scan-status { max-width:760px; margin:60px auto; background:white; border-radius:10px;
   padding:30px 40px; box-shadow:0 4px 20px rgba(0,0,0,.08); text-align:center; }
@@ -260,6 +264,16 @@ td.empty { color:#cbd5e1; }
   <strong>and all subfolders</strong>, matches each settings file to its rendered video,
   and shows everything in one table.</p>
   <button class="bigbtn" onclick="pickFolder()">Open Folder</button>
+  <div class="dropzone" id="dropzone">
+    Drop settings files here to quick-compare
+    <div class="hint">.txt or .json &mdash; drop files, then click Compare</div>
+    <div id="drop-staged" style="display:none; margin-top:10px;">
+      <span id="drop-count" style="font-weight:700; color:#2b2d42;"></span>
+      <button class="bigbtn" id="drop-go" style="margin-left:12px; padding:8px 20px; font-size:13px; background:#0ea5e9;">Compare</button>
+      <button style="margin-left:6px; padding:8px 14px; font-size:12px; background:none; border:1px solid #94a3b8; border-radius:6px; cursor:pointer; color:#64748b;" id="drop-clear">Clear</button>
+      <div id="drop-names" style="margin-top:8px; font-size:11px; color:#94a3b8; max-height:60px; overflow-y:auto;"></div>
+    </div>
+  </div>
   <div class="warn" id="browser-warn" style="display:none">
     This tool needs the File System Access API, which works in <strong>Chrome</strong> or
     <strong>Microsoft Edge</strong> on desktop. It will not work in Firefox or Safari.
@@ -416,6 +430,138 @@ async function pickFolder() {
   lastDirHandle = handle;
   try { await idbSet("lastFolder", handle); } catch(e){}
   await scanHandle(handle);
+}
+
+// ── Quick-compare: drag & drop settings files directly ───────────────────────
+const STAGED_FILES = [];
+function updateStageUI() {
+  const staged = document.getElementById("drop-staged");
+  const cnt = document.getElementById("drop-count");
+  const names = document.getElementById("drop-names");
+  if (STAGED_FILES.length === 0) { staged.style.display = "none"; return; }
+  staged.style.display = "";
+  cnt.textContent = STAGED_FILES.length + " file" + (STAGED_FILES.length > 1 ? "s" : "") + " staged";
+  names.textContent = STAGED_FILES.map(f => f.name).join(", ");
+}
+(function initDropZone() {
+  document.addEventListener("DOMContentLoaded", () => {
+    const dz = document.getElementById("dropzone");
+    if (!dz) return;
+    dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("over"); });
+    dz.addEventListener("dragleave", () => dz.classList.remove("over"));
+    dz.addEventListener("drop", e => {
+      e.preventDefault(); dz.classList.remove("over");
+      const files = [...e.dataTransfer.files].filter(f =>
+        f.name.toLowerCase().endsWith(".txt") || f.name.toLowerCase().endsWith(".json"));
+      if (files.length === 0) return;
+      files.forEach(f => { if (!STAGED_FILES.some(s => s.name === f.name)) STAGED_FILES.push(f); });
+      updateStageUI();
+    });
+    // Click the zone itself (not buttons inside) to add via file picker
+    dz.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.multiple = true; inp.accept = ".txt,.json";
+      inp.onchange = () => {
+        [...inp.files].forEach(f => { if (!STAGED_FILES.some(s => s.name === f.name)) STAGED_FILES.push(f); });
+        updateStageUI();
+      };
+      inp.click();
+    });
+    document.getElementById("drop-go").addEventListener("click", async e => {
+      e.stopPropagation();
+      if (STAGED_FILES.length === 0) return;
+      await quickCompareFiles([...STAGED_FILES]);
+    });
+    document.getElementById("drop-clear").addEventListener("click", e => {
+      e.stopPropagation();
+      STAGED_FILES.length = 0;
+      updateStageUI();
+    });
+  });
+})();
+
+async function quickCompareFiles(files) {
+  ROOT_NAME = "Quick Compare";
+  STATE = loadState();
+  document.getElementById("welcome").style.display = "none";
+  document.getElementById("tbl-wrap").style.display = "none";
+  document.getElementById("gallery-wrap").style.display = "none";
+  const ss = document.getElementById("scan-status"); ss.style.display = "block";
+  const msg = document.getElementById("scan-msg"), bar = document.getElementById("scan-bar");
+  msg.textContent = "Reading " + files.length + " files...";
+
+  const entries = [];
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    let text = "";
+    try { text = await f.text(); } catch(e) { continue; }
+    const data = parseJson(text);
+    if (!data || typeof data !== "object") continue;
+
+    const isV = isPromptOnly(data);
+    const folderShort = "Dropped";
+    const mtime = f.lastModified || 0;
+    const entry = {};
+
+    if (isV) {
+      const allText = Object.values(data).join(" ");
+      const kf = Object.keys(data).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+      entry._file = f.name; entry._folder_short = folderShort;
+      entry._source = "Vello"; entry._mtime = mtimeStr(mtime);
+      entry._loras = extractLoras(allText);
+      entry._keyframe_count = kf.length;
+      entry.__id = "drop::" + f.name; entry.__source = "Vello";
+    } else {
+      for (const [k,v] of Object.entries(data)) entry[k] = fmtVal(v);
+      entry._file = f.name; entry._folder_short = folderShort;
+      entry._source = "Mine"; entry._mtime = mtimeStr(mtime);
+      entry.__id = "drop::" + f.name; entry.__source = "Mine";
+      let prompts = data.prompts || data.animation_prompts || {};
+      let allText = "";
+      if (prompts && typeof prompts === "object") allText = Object.values(prompts).map(String).join(" ");
+      else allText = String(prompts);
+      entry._loras = extractLoras(allText);
+      let kf = [];
+      if (prompts && typeof prompts === "object") {
+        kf = Object.keys(prompts).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+      }
+      entry._keyframe_count = kf.length || "";
+      if (kf.length > 1) {
+        let sp = 0; for (let j=1;j<kf.length;j++) sp += kf[j]-kf[j-1];
+        entry._keyframe_spacing = Math.round(sp/(kf.length-1));
+      }
+      entry.__video_match = "";
+    }
+    entries.push(entry);
+    bar.style.width = Math.round((i+1)/files.length*100) + "%";
+  }
+
+  if (entries.length === 0) { alert("No valid settings found in the dropped files."); ss.style.display="none"; document.getElementById("welcome").style.display=""; return; }
+
+  ROWS = entries;
+  // Build columns
+  const allKeys = new Set();
+  ROWS.forEach(d => Object.keys(d).forEach(k => { if (!k.startsWith("__") && k!=="_videoFile" && k!=="_videoUrl") allKeys.add(k); }));
+  const pri = PRIORITY.filter(k => allKeys.has(k));
+  const rest = [...allKeys].filter(k => !pri.includes(k) && !k.startsWith("_")).sort();
+  COLUMNS = pri.concat(rest);
+
+  bar.style.width = "100%";
+  ss.style.display = "none";
+  document.getElementById("toolbar").style.display = "flex";
+  document.getElementById("tbl-wrap").style.display = "block";
+  document.getElementById("toolbar-sub").textContent = "Quick Compare -- " + ROWS.length + " files";
+
+  buildHeader();
+  renderBody();
+
+  // If exactly 2+ files, auto-select all and open compare
+  if (ROWS.length >= 2) {
+    ROWS.forEach(r => { r.__checked = true; });
+    renderBody();
+    showCompare();
+  }
 }
 
 async function rescan() {
