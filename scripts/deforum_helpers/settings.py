@@ -169,6 +169,43 @@ def load_all_settings(*args, ui_launch=False, jdata=None, **kwargs):
         return list(result.values()) + [""]
 
 
+def stash_init_image(pil_image, current_init_path):
+    """When the user drops an image into init_image_box, save the PIL to disk
+    under outputs/deforum_init_images/<sha8>.png and return the path so it
+    can be mirrored into the init_image URL textbox. That makes the path
+    serializable to settings .txt — the box widget itself can't be saved
+    because PIL objects don't survive JSON.
+
+    Returns (new_init_image_path, status_text). On clear, returns ("", "").
+    """
+    if pil_image is None:
+        # User cleared the box. Leave the existing textbox path alone.
+        return current_init_path, ""
+    try:
+        import hashlib
+        from io import BytesIO
+        # Hash the PNG bytes so the same image always lands at the same path
+        # (no orphan duplicates if you drop the same file twice).
+        buf = BytesIO()
+        pil_image.save(buf, format="PNG")
+        png_bytes = buf.getvalue()
+        digest = hashlib.sha1(png_bytes).hexdigest()[:8]
+        outdir = os.path.join(
+            sh.opts.outdir_img2img_samples or "outputs/img2img-images",
+            "..", "deforum_init_images"
+        )
+        outdir = os.path.realpath(outdir)
+        os.makedirs(outdir, exist_ok=True)
+        out_path = os.path.join(outdir, f"init_{digest}.png")
+        if not os.path.isfile(out_path):
+            with open(out_path, "wb") as f:
+                f.write(png_bytes)
+        return out_path, f"Init image saved -> {out_path}"
+    except Exception as e:
+        print(f"[stash_init_image] failed: {e}")
+        return current_init_path, f"Init image save failed: {e}"
+
+
 def pick_save_path(current_path):
     """Open a native Save As dialog (Windows Explorer style) on the server,
     which is the same machine as the user since WebUI runs on localhost.

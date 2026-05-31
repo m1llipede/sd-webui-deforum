@@ -19,7 +19,7 @@ from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
 from modules.call_queue import wrap_gradio_gpu_call
 from .run_deforum import run_deforum
-from .settings import save_settings, load_all_settings, load_video_settings, load_prompts_only, pick_save_path
+from .settings import save_settings, load_all_settings, load_video_settings, load_prompts_only, pick_save_path, stash_init_image
 from .general_utils import get_deforum_version
 from .ui_left import setup_deforum_left_side_ui
 from scripts.deforum_extend_paths import deforum_sys_extend
@@ -207,6 +207,20 @@ def on_ui_tabs():
             fn=wrap_gradio_call(load_prompts_only),
             inputs=[settings_path, prompts_comp, prompts_pos_comp, prompts_neg_comp],
             outputs=[prompts_comp, prompts_pos_comp, prompts_neg_comp, save_status],
+        )
+
+        # When the user drops an image into the init_image_box, save it under
+        # outputs/deforum_init_images/<hash>.png and mirror that path into the
+        # init_image URL textbox. The textbox IS persisted by save_settings, so
+        # the next time the settings file is loaded, init_image points at the
+        # same PNG on disk and the image effectively "comes back" — even though
+        # the PIL box widget itself can't be serialized.
+        init_image_box_comp = components["init_image_box"]
+        init_image_comp = components["init_image"]
+        init_image_box_comp.change(
+            fn=stash_init_image,
+            inputs=[init_image_box_comp, init_image_comp],
+            outputs=[init_image_comp, save_status],
         )
 
         load_settings_btn.click(
