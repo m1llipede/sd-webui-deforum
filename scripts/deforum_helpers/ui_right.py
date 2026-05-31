@@ -19,7 +19,7 @@ from modules.shared import opts, state
 from modules.ui import create_output_panel, wrap_gradio_call
 from modules.call_queue import wrap_gradio_gpu_call
 from .run_deforum import run_deforum
-from .settings import save_settings, load_all_settings, load_video_settings
+from .settings import save_settings, load_all_settings, load_video_settings, load_prompts_only, pick_save_path
 from .general_utils import get_deforum_version
 from .ui_left import setup_deforum_left_side_ui
 from scripts.deforum_extend_paths import deforum_sys_extend
@@ -107,6 +107,8 @@ def on_ui_tabs():
                         outputs=[],
                     )
                 
+                # Force live preview in modal lightbox so fullscreen view updates during render
+                gr.HTML("""<script>(function(){function f(){if(typeof opts!=='undefined'){opts.js_live_preview_in_modal_lightbox=true}};if(typeof onAfterUiUpdate==='function'){onAfterUiUpdate(f)}else{setTimeout(f,3000)}})();</script>""", visible=False)
                 gr.HTML("""<div id="deforum_preview_zoom">
                     <span style="font-size:12px;color:#888;margin-right:4px;">Preview:</span>
                     <button onclick="(function(h){var g=document.getElementById('deforum_gallery');g.style.setProperty('height',h,'important');var lp=g.querySelector('.livePreview');if(lp){lp.style.height='100%';lp.style.width='100%'}window.dispatchEvent(new Event('resize'))})('280px')" style="background:#2b2d42;color:#ccc;border:1px solid #555;border-radius:4px;padding:2px 10px;font-size:12px;cursor:pointer;margin:0 2px;">256</button>
@@ -131,8 +133,11 @@ def on_ui_tabs():
                 with gr.Row(variant='compact'):
                     save_settings_btn = gr.Button('Save Settings', elem_id='deforum_save_settings_btn')
                     save_as_settings_btn = gr.Button('Save As...', elem_id='deforum_save_as_settings_btn')
-                    load_settings_btn = gr.Button('Load All Settings', elem_id='deforum_load_settings_btn')
-                    load_video_settings_btn = gr.Button('Load Video Settings', elem_id='deforum_load_video_settings_btn')
+                    load_settings_btn = gr.Button('Load all settings', elem_id='deforum_load_settings_btn')
+                    load_video_settings_btn = gr.Button('Load only video settings', elem_id='deforum_load_video_settings_btn')
+                    load_prompts_only_btn = gr.Button('Load only prompts', elem_id='deforum_load_prompts_only_btn')
+                with gr.Row(variant='compact'):
+                    save_status = gr.Textbox(value="", elem_id='deforum_save_status', label="Last save / load", interactive=False, lines=1)
 
         component_list = [components[name] for name in get_component_names()]
 
@@ -178,30 +183,32 @@ def on_ui_tabs():
         save_settings_btn.click(
             fn=wrap_gradio_call(save_settings),
             inputs=[settings_path] + settings_component_list + video_settings_component_list,
-            outputs=[],
+            outputs=[save_status],
         )
 
-        # Save As: JS prompts for a new filename, strips gradio temp paths to show just the filename
+        # Save As: opens a real native Windows file picker via tkinter (server-side,
+        # but server = your machine since WebUI is on localhost). Then saves to the chosen path.
         save_as_settings_btn.click(
-            fn=None,
+            fn=pick_save_path,
             inputs=[settings_path],
             outputs=[settings_path],
-            _js="""(current_path) => {
-                let defaultPath = current_path || 'deforum_settings.txt';
-                // If the path is a gradio temp folder, extract just the filename
-                if (defaultPath.includes('AppData') && defaultPath.includes('gradio')) {
-                    const parts = defaultPath.replace(/\\\\/g, '/').split('/');
-                    defaultPath = parts[parts.length - 1];
-                }
-                const name = prompt('Save settings as (full path or filename):', defaultPath);
-                return name ? name : current_path;
-            }"""
         ).then(
             fn=wrap_gradio_call(save_settings),
             inputs=[settings_path] + settings_component_list + video_settings_component_list,
-            outputs=[],
+            outputs=[save_status],
         )
-        
+
+        # Load only prompts: read animation_prompts + positive/negative from a file,
+        # leave every other setting alone.
+        prompts_comp = components["animation_prompts"]
+        prompts_pos_comp = components["animation_prompts_positive"]
+        prompts_neg_comp = components["animation_prompts_negative"]
+        load_prompts_only_btn.click(
+            fn=wrap_gradio_call(load_prompts_only),
+            inputs=[settings_path, prompts_comp, prompts_pos_comp, prompts_neg_comp],
+            outputs=[prompts_comp, prompts_pos_comp, prompts_neg_comp, save_status],
+        )
+
         load_settings_btn.click(
             fn=wrap_gradio_call(lambda *args, **kwargs: load_all_settings(*args, ui_launch=False, **kwargs)),
             inputs=[settings_path] + settings_component_list,

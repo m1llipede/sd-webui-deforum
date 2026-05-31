@@ -250,6 +250,10 @@ td.empty { color:#cbd5e1; }
   <button id="btn-gallery" onclick="toggleGallery()">Grid View</button>
   <button id="btn-vello" onclick="toggleVello()">Hide Vello</button>
   <button id="btn-diffs" onclick="toggleDiffs()">Hide unchanged cols</button>
+  <span style="position:relative;display:inline-block">
+    <button id="btn-cols" onclick="toggleColMenu(event)" title="Pick which columns to show (saved)">Columns &#9662;</button>
+    <div id="col-menu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:3000;background:#fff;color:#1a1a2e;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:8px;min-width:200px;max-height:400px;overflow-y:auto;font-size:12px;font-weight:500;"></div>
+  </span>
   <button onclick="sortByStars()">Sort by rating</button>
   <button onclick="resetOrder()" title="Clear manual drag order, sort by rating">Reset order</button>
   <button onclick="exportNotes()">Export notes</button>
@@ -265,8 +269,8 @@ td.empty { color:#cbd5e1; }
   and shows everything in one table.</p>
   <button class="bigbtn" onclick="pickFolder()">Open Folder</button>
   <div class="dropzone" id="dropzone">
-    Drop settings files here to quick-compare
-    <div class="hint">.txt or .json &mdash; drop files, then click Compare</div>
+    Drop settings files <strong>or whole folders</strong> here to quick-compare
+    <div class="hint">Drop a <b>folder</b> (imports its settings + movie, ignores stills), or drop a settings <b>.txt + its .mp4 together</b> to pair them. A lone .txt loads settings only. Then click Compare.</div>
     <div id="drop-staged" style="display:none; margin-top:10px;">
       <span id="drop-count" style="font-weight:700; color:#2b2d42;"></span>
       <button class="bigbtn" id="drop-go" style="margin-left:12px; padding:8px 20px; font-size:13px; background:#0ea5e9;">Compare</button>
@@ -329,12 +333,33 @@ const TIMESTAMP_RE = /(\d{14})/;
 const LORA_RE = /<lora:([^:>]+):([0-9.]+)>/g;
 
 const PRIORITY = [
-  "_folder_short","_video","W","H","max_frames","fps","animation_mode","sampler","steps",
-  "scale","seed_behavior","strength_schedule","cfg_scale_schedule","noise_schedule",
+  "_folder_short","_video",
+  // Model / sampling
+  "sd_model_name","scheduler","sampler","steps",
+  // Strength & noise
+  "strength_schedule","noise_schedule","noise_multiplier_schedule","enable_noise_multiplier_scheduling",
+  // Coherence & cadence
+  "color_coherence","diffusion_cadence","optical_flow_cadence","animation_mode",
+  // Then the rest of the common knobs
+  "cfg_scale_schedule","scale","max_frames","fps","seed_behavior",
   "translation_x","translation_y","translation_z","rotation_3d_x","rotation_3d_y","rotation_3d_z",
-  "zoom","angle","diffusion_cadence","border","color_coherence","optical_flow_cadence",
+  "zoom","angle","border",
   "_loras","_keyframe_count","_keyframe_spacing","init_image","use_init","prompts","animation_prompts"
 ];
+
+// Columns hidden by default (always identical across runs). User can re-enable via Columns dropdown.
+const DEFAULT_HIDDEN = new Set(["W","H","animation_mode"]);
+// Per-column visibility overrides chosen by the user, persisted to localStorage.
+// Map col -> true (force show) / false (force hide). Absent = use DEFAULT_HIDDEN.
+let COL_PREFS = {};
+function colPrefsKey(){ return "deforum_colprefs_v1"; }
+function loadColPrefs(){ try { COL_PREFS = JSON.parse(localStorage.getItem(colPrefsKey())) || {}; } catch(e){ COL_PREFS = {}; } }
+function saveColPrefs(){ try { localStorage.setItem(colPrefsKey(), JSON.stringify(COL_PREFS)); } catch(e){} }
+// Effective default-visibility of a column (ignores DIFFS_ONLY unchanged-hiding).
+function colVisible(col){
+  if (Object.prototype.hasOwnProperty.call(COL_PREFS, col)) return COL_PREFS[col];
+  return !DEFAULT_HIDDEN.has(col);
+}
 
 const ALWAYS_HIDE = new Set([
   "seed","_mtime","_source","_video_match","_loras",
@@ -361,6 +386,7 @@ let lastDirHandle = null;
 // ── State (notes/ratings) persistence ────────────────────────────────────────
 function storeKey() { return "deforum_portable::" + (ROOT_NAME || "default"); }
 function loadState() { try { return JSON.parse(localStorage.getItem(storeKey())) || {}; } catch(e){ return {}; } }
+loadColPrefs();
 function saveState() { localStorage.setItem(storeKey(), JSON.stringify(STATE)); }
 let STATE = {};
 
@@ -433,55 +459,164 @@ async function pickFolder() {
 }
 
 // ── Quick-compare: drag & drop settings files directly ───────────────────────
-const STAGED_FILES = [];
+// Staged items: each is { kind:"dir"|"file", name, handle?, file? }
+//  - dir:  a dropped FOLDER -> scan its top level for one settings file + its movie, ignore stills
+//  - file: a dropped/picked settings .txt/.json. If it carries a FileSystemFileHandle we still
+//          can't reach siblings without a picker, so file-only drops import settings without movie.
+const STAGED_ITEMS = [];
+const VIDEO_EXTS = [".mp4",".webm",".mov",".mkv"];
+const SETTINGS_EXTS = [".txt",".json"];
+
 function updateStageUI() {
   const staged = document.getElementById("drop-staged");
   const cnt = document.getElementById("drop-count");
   const names = document.getElementById("drop-names");
-  if (STAGED_FILES.length === 0) { staged.style.display = "none"; return; }
+  if (STAGED_ITEMS.length === 0) { staged.style.display = "none"; return; }
   staged.style.display = "";
-  cnt.textContent = STAGED_FILES.length + " file" + (STAGED_FILES.length > 1 ? "s" : "") + " staged";
-  names.textContent = STAGED_FILES.map(f => f.name).join(", ");
+  const folders = STAGED_ITEMS.filter(i=>i.kind==="dir").length;
+  const fileN = STAGED_ITEMS.filter(i=>i.kind==="file").length;
+  const vidN = STAGED_ITEMS.filter(i=>i.kind==="video").length;
+  const parts = [];
+  if (folders) parts.push(folders + " folder" + (folders>1?"s":""));
+  if (fileN) parts.push(fileN + " settings");
+  if (vidN) parts.push(vidN + " movie" + (vidN>1?"s":""));
+  cnt.textContent = parts.join(" + ") + " staged";
+  names.textContent = STAGED_ITEMS.map(i => (i.kind==="dir"?"[folder] ":"") + i.name).join(", ");
 }
+
+function isSettingsName(name){ const l=name.toLowerCase(); return SETTINGS_EXTS.some(e=>l.endsWith(e)); }
+function isVideoName(name){ const l=name.toLowerCase(); return VIDEO_EXTS.some(e=>l.endsWith(e)); }
+
+// Pick the best video for a given settings stem out of a list of {name,file,mtime}.
+function matchVideo(settingsName, videos){
+  if (!videos.length) return null;
+  let stem = stripExt(settingsName).replace(/[_-](?:settings|cfg|config|info)$/i, "");
+  let v = videos.find(x => stripExt(x.name).toLowerCase() === stem.toLowerCase());
+  if (v) return { video:v, type:"exact" };
+  v = videos.find(x => stripExt(x.name).toLowerCase().startsWith(stem.toLowerCase()));
+  if (v) return { video:v, type:"prefix" };
+  const m = stem.match(TIMESTAMP_RE);
+  if (m) { v = videos.find(x => x.name.includes(m[1])); if (v) return { video:v, type:"timestamp" }; }
+  if (videos.length === 1) return { video:videos[0], type:"single" };
+  videos = videos.slice().sort((a,b)=>(b.mtime||0)-(a.mtime||0));
+  return { video:videos[0], type:"recent" };
+}
+
 (function initDropZone() {
   document.addEventListener("DOMContentLoaded", () => {
     const dz = document.getElementById("dropzone");
     if (!dz) return;
     dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("over"); });
     dz.addEventListener("dragleave", () => dz.classList.remove("over"));
-    dz.addEventListener("drop", e => {
+    dz.addEventListener("drop", async e => {
       e.preventDefault(); dz.classList.remove("over");
-      const files = [...e.dataTransfer.files].filter(f =>
-        f.name.toLowerCase().endsWith(".txt") || f.name.toLowerCase().endsWith(".json"));
-      if (files.length === 0) return;
-      files.forEach(f => { if (!STAGED_FILES.some(s => s.name === f.name)) STAGED_FILES.push(f); });
+      const items = [...(e.dataTransfer.items || [])];
+      let added = false;
+      for (const it of items) {
+        if (!it || !it.getAsFileSystemHandle) continue;
+        let handle = null;
+        try { handle = await it.getAsFileSystemHandle(); } catch(e) {}
+        if (!handle) continue;
+        if (handle.kind === "directory") {
+          if (STAGED_ITEMS.some(s => s.kind==="dir" && s.name===handle.name)) continue;
+          STAGED_ITEMS.push({ kind:"dir", name:handle.name, handle });
+          added = true;
+        } else if (handle.kind === "file" && isSettingsName(handle.name)) {
+          if (STAGED_ITEMS.some(s => s.kind==="file" && s.name===handle.name)) continue;
+          let file = null; try { file = await handle.getFile(); } catch(e){}
+          STAGED_ITEMS.push({ kind:"file", name:handle.name, handle, file });
+          added = true;
+        } else if (handle.kind === "file" && isVideoName(handle.name)) {
+          if (STAGED_ITEMS.some(s => s.kind==="video" && s.name===handle.name)) continue;
+          let file = null; try { file = await handle.getFile(); } catch(e){}
+          STAGED_ITEMS.push({ kind:"video", name:handle.name, handle, file });
+          added = true;
+        }
+      }
+      // Fallback for browsers without getAsFileSystemHandle: use plain files
+      if (!added) {
+        for (const f of [...e.dataTransfer.files]) {
+          if (isSettingsName(f.name)) {
+            if (!STAGED_ITEMS.some(s => s.kind==="file" && s.name===f.name))
+              STAGED_ITEMS.push({ kind:"file", name:f.name, file:f });
+          } else if (isVideoName(f.name)) {
+            if (!STAGED_ITEMS.some(s => s.kind==="video" && s.name===f.name))
+              STAGED_ITEMS.push({ kind:"video", name:f.name, file:f });
+          }
+        }
+      }
       updateStageUI();
     });
-    // Click the zone itself (not buttons inside) to add via file picker
+    // Click the zone itself (not buttons inside) to add settings files via picker
     dz.addEventListener("click", e => {
       if (e.target.closest("button")) return;
       const inp = document.createElement("input");
       inp.type = "file"; inp.multiple = true; inp.accept = ".txt,.json";
       inp.onchange = () => {
-        [...inp.files].forEach(f => { if (!STAGED_FILES.some(s => s.name === f.name)) STAGED_FILES.push(f); });
+        [...inp.files].forEach(f => {
+          if (!STAGED_ITEMS.some(s => s.kind==="file" && s.name===f.name))
+            STAGED_ITEMS.push({ kind:"file", name:f.name, file:f });
+        });
         updateStageUI();
       };
       inp.click();
     });
     document.getElementById("drop-go").addEventListener("click", async e => {
       e.stopPropagation();
-      if (STAGED_FILES.length === 0) return;
-      await quickCompareFiles([...STAGED_FILES]);
+      if (STAGED_ITEMS.length === 0) return;
+      await quickCompareItems([...STAGED_ITEMS]);
     });
     document.getElementById("drop-clear").addEventListener("click", e => {
       e.stopPropagation();
-      STAGED_FILES.length = 0;
+      STAGED_ITEMS.length = 0;
       updateStageUI();
     });
   });
 })();
 
-async function quickCompareFiles(files) {
+// Build a row entry from parsed settings JSON. Video (if any) is attached separately.
+function buildDropEntry(name, data, mtime, folderShort, idPrefix) {
+  const isV = isPromptOnly(data);
+  const entry = {};
+  if (isV) {
+    const allText = Object.values(data).join(" ");
+    const kf = Object.keys(data).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+    entry._file = name; entry._folder_short = folderShort;
+    entry._source = "Vello"; entry._mtime = mtimeStr(mtime); entry.__mtimeRaw = mtime;
+    entry._loras = extractLoras(allText);
+    entry._keyframe_count = kf.length;
+    entry.__id = idPrefix + name; entry.__source = "Vello";
+  } else {
+    for (const [k,v] of Object.entries(data)) entry[k] = fmtVal(v);
+    entry._file = name; entry._folder_short = folderShort;
+    entry._source = "Mine"; entry._mtime = mtimeStr(mtime); entry.__mtimeRaw = mtime;
+    entry.__id = idPrefix + name; entry.__source = "Mine";
+    let prompts = data.prompts || data.animation_prompts || {};
+    let allText = (prompts && typeof prompts === "object")
+      ? Object.values(prompts).map(String).join(" ") : String(prompts);
+    entry._loras = extractLoras(allText);
+    let kf = (prompts && typeof prompts === "object")
+      ? Object.keys(prompts).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b) : [];
+    entry._keyframe_count = kf.length || "";
+    if (kf.length > 1) {
+      let sp = 0; for (let j=1;j<kf.length;j++) sp += kf[j]-kf[j-1];
+      entry._keyframe_spacing = Math.round(sp/(kf.length-1));
+    }
+  }
+  entry._video = ""; entry._video_match = ""; entry._videoFile = null; entry.__video_match = "";
+  return entry;
+}
+
+function attachVideo(entry, rec) {
+  if (!rec || !rec.video) return;
+  entry._video = rec.video.name;
+  entry._video_match = rec.type;
+  entry.__video_match = rec.type;
+  entry._videoFile = rec.video.file;
+  try { entry._videoUrl = URL.createObjectURL(rec.video.file); } catch(e){}
+}
+
+async function quickCompareItems(items) {
   ROOT_NAME = "Quick Compare";
   STATE = loadState();
   document.getElementById("welcome").style.display = "none";
@@ -489,55 +624,61 @@ async function quickCompareFiles(files) {
   document.getElementById("gallery-wrap").style.display = "none";
   const ss = document.getElementById("scan-status"); ss.style.display = "block";
   const msg = document.getElementById("scan-msg"), bar = document.getElementById("scan-bar");
-  msg.textContent = "Reading " + files.length + " files...";
+  msg.textContent = "Reading " + items.length + " item" + (items.length>1?"s":"") + "...";
 
-  const entries = [];
-  for (let i = 0; i < files.length; i++) {
-    const f = files[i];
-    let text = "";
-    try { text = await f.text(); } catch(e) { continue; }
-    const data = parseJson(text);
-    if (!data || typeof data !== "object") continue;
-
-    const isV = isPromptOnly(data);
-    const folderShort = "Dropped";
-    const mtime = f.lastModified || 0;
-    const entry = {};
-
-    if (isV) {
-      const allText = Object.values(data).join(" ");
-      const kf = Object.keys(data).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-      entry._file = f.name; entry._folder_short = folderShort;
-      entry._source = "Vello"; entry._mtime = mtimeStr(mtime);
-      entry._loras = extractLoras(allText);
-      entry._keyframe_count = kf.length;
-      entry.__id = "drop::" + f.name; entry.__source = "Vello";
-    } else {
-      for (const [k,v] of Object.entries(data)) entry[k] = fmtVal(v);
-      entry._file = f.name; entry._folder_short = folderShort;
-      entry._source = "Mine"; entry._mtime = mtimeStr(mtime);
-      entry.__id = "drop::" + f.name; entry.__source = "Mine";
-      let prompts = data.prompts || data.animation_prompts || {};
-      let allText = "";
-      if (prompts && typeof prompts === "object") allText = Object.values(prompts).map(String).join(" ");
-      else allText = String(prompts);
-      entry._loras = extractLoras(allText);
-      let kf = [];
-      if (prompts && typeof prompts === "object") {
-        kf = Object.keys(prompts).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-      }
-      entry._keyframe_count = kf.length || "";
-      if (kf.length > 1) {
-        let sp = 0; for (let j=1;j<kf.length;j++) sp += kf[j]-kf[j-1];
-        entry._keyframe_spacing = Math.round(sp/(kf.length-1));
-      }
-      entry.__video_match = "";
-    }
-    entries.push(entry);
-    bar.style.width = Math.round((i+1)/files.length*100) + "%";
+  // Loose movies dropped alongside settings files — used to pair single .txt drops.
+  const looseVideos = [];
+  for (const it of items) {
+    if (it.kind !== "video") continue;
+    let file = it.file;
+    if (!file && it.handle) { try { file = await it.handle.getFile(); } catch(e){} }
+    if (file) looseVideos.push({ name: it.name, file, mtime: file.lastModified||0 });
   }
 
-  if (entries.length === 0) { alert("No valid settings found in the dropped files."); ss.style.display="none"; document.getElementById("welcome").style.display=""; return; }
+  const entries = [];
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.kind === "video") continue; // handled above as looseVideos
+    try {
+      if (it.kind === "dir") {
+        // Scan ONLY this folder's top level: collect settings files + videos, ignore stills.
+        msg.textContent = "Scanning folder " + it.name + "...";
+        const settingsEntries = [], videos = [];
+        for await (const ent of it.handle.values()) {
+          if (ent.kind !== "file") continue;       // one level only; ignore subfolders
+          if (isVideoName(ent.name)) {
+            let file; try { file = await ent.getFile(); } catch(e){ continue; }
+            videos.push({ name: ent.name, file, mtime: file.lastModified });
+          } else if (isSettingsName(ent.name)) {
+            settingsEntries.push(ent);             // PNG/JPG stills simply never match here
+          }
+        }
+        for (const sent of settingsEntries) {
+          let file, text;
+          try { file = await sent.getFile(); text = await file.text(); } catch(e){ continue; }
+          const data = parseJson(text);
+          if (!data || typeof data !== "object") continue;
+          const entry = buildDropEntry(sent.name, data, file.lastModified||0, it.name, "drop::"+it.name+"::");
+          attachVideo(entry, matchVideo(sent.name, videos));
+          entries.push(entry);
+        }
+      } else {
+        // Single dropped/picked settings file — settings only, no sibling movie reachable.
+        let file = it.file, text;
+        if (!file && it.handle) { try { file = await it.handle.getFile(); } catch(e){} }
+        if (!file) continue;
+        try { text = await file.text(); } catch(e){ continue; }
+        const data = parseJson(text);
+        if (!data || typeof data !== "object") continue;
+        const entry = buildDropEntry(it.name, data, file.lastModified||0, "Dropped", "drop::");
+        if (looseVideos.length) attachVideo(entry, matchVideo(it.name, looseVideos));
+        entries.push(entry);
+      }
+    } catch(e) { log("Drop scan error (" + it.name + "): " + e.message); }
+    bar.style.width = Math.round((i+1)/items.length*100) + "%";
+  }
+
+  if (entries.length === 0) { alert("No valid settings found in what you dropped."); ss.style.display="none"; document.getElementById("welcome").style.display=""; return; }
 
   ROWS = entries;
   // Build columns
@@ -956,7 +1097,7 @@ function renderBody(){
     dr.appendChild(td); tbody.appendChild(dr);
     appendRows(noVideo,"");
   }
-  if(DIFFS_ONLY) applyDiffs();
+  applyDiffs();
   updateHidCount();
 }
 function toggleUnconfirmed(){
@@ -1049,16 +1190,69 @@ function applyFilter(){
 function applyDiffs(){
   const dataCols=COLUMNS.filter(c=>c!=="_file"&&c!=="_folder_short");
   const diffRows = COMPARE_MODE ? ROWS.filter(r => SELECTED.has(r.__id)) : ROWS;
-  dataCols.forEach((col,i)=>{
+  // Precompute the hide flag for each data column once.
+  const hideFlags=dataCols.map(col=>{
     const vals=new Set(diffRows.map(r=>(r[col]||"")).filter(x=>x!==""));
     const unchanged=vals.size<=1;
-    const hide=ALWAYS_HIDE.has(col)||(DIFFS_ONLY&&unchanged&&col!=="_video");
-    const idx=5+i+1;
-    document.querySelectorAll("#tbl tr > *:nth-child("+idx+")").forEach(el=>el.classList.toggle("col-hidden",hide));
+    const userHidden=!colVisible(col)&&col!=="_video";
+    return ALWAYS_HIDE.has(col)||userHidden||(DIFFS_ONLY&&unchanged&&col!=="_video");
   });
+  // Single pass over header + body rows. The first 5 cells are sticky (sel/#/rating/notes/video);
+  // data cell i is child index 5+i. This replaces ~150 nth-child querySelectorAll calls.
+  const rows=[document.getElementById("hdr"),
+    ...document.querySelectorAll("#tbody tr:not(.section-divider)")];
+  for(const tr of rows){
+    if(!tr) continue;
+    const cells=tr.children;
+    for(let i=0;i<hideFlags.length;i++){
+      const cell=cells[5+i];
+      if(cell) cell.classList.toggle("col-hidden",hideFlags[i]);
+    }
+  }
 }
 function toggleDiffs(){ DIFFS_ONLY=!DIFFS_ONLY;
   document.getElementById("btn-diffs").classList.toggle("active",DIFFS_ONLY); applyDiffs(); }
+
+// ── Column selector (persisted) ───────────────────────────────────────────────
+function colLabel(col){
+  const map={ "_video":"Video file","_loras":"LoRAs","_keyframe_count":"Keyframes",
+    "_keyframe_spacing":"Keyframe spacing","_mtime":"Modified","sd_model_name":"Model",
+    "W":"Width","H":"Height" };
+  return map[col]||col;
+}
+function buildColMenu(){
+  const m=document.getElementById("col-menu"); if(!m) return;
+  m.innerHTML="";
+  const head=document.createElement("div");
+  head.style.cssText="display:flex;gap:6px;margin-bottom:6px;border-bottom:1px solid #e2e8f0;padding-bottom:6px";
+  head.innerHTML='<button style="flex:1;padding:3px;font-size:11px;cursor:pointer" onclick="colMenuAll(true)">Show all</button>'+
+    '<button style="flex:1;padding:3px;font-size:11px;cursor:pointer" onclick="colMenuAll(false)">Hide all</button>'+
+    '<button style="flex:1;padding:3px;font-size:11px;cursor:pointer" onclick="colMenuReset()">Reset</button>';
+  m.appendChild(head);
+  COLUMNS.forEach(col=>{
+    if(col==="_file"||col==="_folder_short"||ALWAYS_HIDE.has(col)) return;
+    const row=document.createElement("label");
+    row.style.cssText="display:flex;align-items:center;gap:6px;padding:3px 2px;cursor:pointer;white-space:nowrap";
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=colVisible(col);
+    cb.onchange=()=>{ COL_PREFS[col]=cb.checked; saveColPrefs(); renderBody(); };
+    row.appendChild(cb);
+    const sp=document.createElement("span"); sp.textContent=colLabel(col); row.appendChild(sp);
+    m.appendChild(row);
+  });
+}
+function toggleColMenu(e){
+  e.stopPropagation();
+  const m=document.getElementById("col-menu");
+  if(m.style.display==="none"){ buildColMenu(); m.style.display="block";
+    setTimeout(()=>document.addEventListener("click",closeColMenu),0); }
+  else closeColMenu();
+}
+function closeColMenu(){ const m=document.getElementById("col-menu"); if(m) m.style.display="none";
+  document.removeEventListener("click",closeColMenu); }
+function colMenuAll(show){ COLUMNS.forEach(col=>{
+  if(col==="_file"||col==="_folder_short"||ALWAYS_HIDE.has(col)) return; COL_PREFS[col]=show; });
+  saveColPrefs(); buildColMenu(); renderBody(); }
+function colMenuReset(){ COL_PREFS={}; saveColPrefs(); buildColMenu(); renderBody(); }
 function toggleVello(){ VELLO_VISIBLE=!VELLO_VISIBLE;
   document.getElementById("btn-vello").textContent=VELLO_VISIBLE?"Hide Vello":"Show Vello";
   document.getElementById("btn-vello").classList.toggle("active",!VELLO_VISIBLE); renderBody(); }

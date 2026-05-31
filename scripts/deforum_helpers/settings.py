@@ -101,8 +101,8 @@ def save_settings(*args, **kwargs):
     print(f"saving custom settings to {settings_path}")
     with open(settings_path, "w", encoding='utf-8') as f:
         f.write(json.dumps(filtered_combined, ensure_ascii=False, indent=4))
-    
-    return [""]
+    status = f"Saved to: {settings_path}"
+    return [status]
 
 def load_all_settings(*args, ui_launch=False, jdata=None, **kwargs):
     import gradio as gr
@@ -167,6 +167,69 @@ def load_all_settings(*args, ui_launch=False, jdata=None, **kwargs):
         return ({key: gr.update(value=value) for key, value in result.items()},)
     else:
         return list(result.values()) + [""]
+
+
+def pick_save_path(current_path):
+    """Open a native Save As dialog (Windows Explorer style) on the server,
+    which is the same machine as the user since WebUI runs on localhost.
+    Returns the chosen absolute path, or the unchanged current path on cancel."""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        # Default to the resolved current_path so the dialog opens in the right folder
+        default_dir = ""
+        default_name = "deforum_settings.txt"
+        if current_path and current_path.strip():
+            cp = clean_gradio_path_strings(current_path.strip())
+            cp = os.path.realpath(cp)
+            if os.path.isdir(os.path.dirname(cp)):
+                default_dir = os.path.dirname(cp)
+            default_name = os.path.basename(cp) or default_name
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        chosen = filedialog.asksaveasfilename(
+            parent=root,
+            title="Save Deforum settings as...",
+            initialdir=default_dir or None,
+            initialfile=default_name,
+            defaultextension=".txt",
+            filetypes=[("Settings file", "*.txt *.json"), ("All files", "*.*")],
+        )
+        root.destroy()
+        if not chosen:
+            return current_path  # user cancelled
+        return os.path.realpath(chosen)
+    except Exception as e:
+        print(f"[Save As] file dialog failed: {e}")
+        return current_path
+
+
+def load_prompts_only(settings_path, current_prompts, current_pos, current_neg):
+    """Load only the animation_prompts (+ positive/negative) from a settings file,
+    leaving every other field untouched. Returns 3 values in order matching the
+    button's outputs: animation_prompts, animation_prompts_positive, animation_prompts_negative."""
+    sp = clean_gradio_path_strings(settings_path.strip())
+    sp = os.path.realpath(sp)
+    if not os.path.isfile(sp):
+        print(f"[Load only prompts] file not found: {sp}")
+        return [current_prompts, current_pos, current_neg, ""]
+    try:
+        with open(sp, "r", encoding="utf-8") as f:
+            jdata = json.load(f)
+    except Exception as e:
+        print(f"[Load only prompts] error reading {sp}: {e}")
+        return [current_prompts, current_pos, current_neg, ""]
+    handle_deprecated_settings(jdata)
+    prompts = jdata.get("prompts", jdata.get("animation_prompts", None))
+    pos = jdata.get("animation_prompts_positive", current_pos)
+    neg = jdata.get("animation_prompts_negative", current_neg)
+    if prompts is None:
+        new_prompts = current_prompts
+    else:
+        new_prompts = json.dumps(prompts, ensure_ascii=False, indent=4) if not isinstance(prompts, str) else prompts
+    print(f"[Load only prompts] loaded prompts from {sp}")
+    return [new_prompts, pos, neg, ""]
 
 
 def load_video_settings(*args, jdata=None, **kwargs):
