@@ -84,7 +84,7 @@ def on_ui_tabs():
                         )
                 id_part = 'deforum'
                 with gr.Row(elem_id=f"{id_part}_generate_box", variant='compact'):
-                    skip = gr.Button('Pause/Resume', elem_id=f"{id_part}_skip", visible=False)
+                    skip = gr.Button('Pause/Resume', elem_id=f"{id_part}_skip", visible=True)
                     interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", visible=True)
                     interrupting = gr.Button('Interrupting...', elem_id=f"{id_part}_interrupting", elem_classes="generate-box-interrupting", tooltip="Interrupting generation...")
                     submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')

@@ -376,7 +376,7 @@ const ALWAYS_HIDE = new Set([
 let ROOT_NAME = "";
 let ROWS = [];
 let COLUMNS = [];
-let COLOR_CODE = true, DIFFS_ONLY = true, GALLERY_MODE = false, VELLO_VISIBLE = true;
+let COLOR_CODE = true, DIFFS_ONLY = false, GALLERY_MODE = false, VELLO_VISIBLE = true;
 let UNCONFIRMED_COLLAPSED = false;
 const SELECTED = new Set();
 let COMPARE_MODE = false;
@@ -817,7 +817,9 @@ async function scanHandle(dirHandle) {
   buildHeader();
   if (applySavedOrder()) { renderBody(); }   // restore the user's last drag order
   else { sortByStars(); }
-  document.getElementById("btn-diffs").classList.add("active");
+  // Keep the Hide-unchanged button state honest: reflect DIFFS_ONLY (default off =
+  // show ALL params, incl. every noise + cadence setting). User opts in to hiding.
+  document.getElementById("btn-diffs").classList.toggle("active", DIFFS_ONLY);
 }
 
 // ── Parsing helpers ────────────────────────────────────────────────────────────

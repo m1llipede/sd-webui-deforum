@@ -7,6 +7,35 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 
 ---
 
+## ⭐ Recommended starting settings
+
+The single best long-form recipe to date is included as a ready-to-load preset:
+
+**[`examples/Microcosm_Best_settings.txt`](examples/Microcosm_Best_settings.txt)**
+
+Load it via the Deforum tab's "Load all settings" button, then swap in your own
+prompts. It is a 15,000-frame, 1024x1024, 30fps organic micro-world walk-through
+tuned for long-run coherence. The numbers that matter:
+
+| Setting | Value | Why |
+|---|---|---|
+| Sampler / scheduler | DPM++ 2M SDE / Karras | smooth, detail-preserving |
+| Steps | 40 | enough for clean frames without crawl |
+| `strength_schedule` | `0: (0.6)` | frame-to-frame persistence without smearing |
+| `cfg_scale_schedule` | `0: (6)` | guidance without over-baking |
+| `noise_schedule` | `0: (0.01)` | low per-frame noise = stable scene |
+| `noise_multiplier_schedule` | `0: (1.0)`, scheduling **off** | avoids the compounding-noise blowup that destroys coherence over thousands of frames |
+| `diffusion_cadence` | `5` | strong consistency; in-between frames are warped, not re-rolled |
+| `optical_flow_cadence` | DIS Fine | smooth motion across cadence skips |
+| `color_coherence` | LAB | locks the palette so colors don't drift |
+| `translation_z` | `0: (2.5)` | slow forward drift; the camera explores one evolving world |
+| Keyframes | 50 @ 300-frame spacing | dense prompt schedule for constant visual change |
+
+Prompts in the preset are organic/photoreal micro-organism scenes; replace them
+with your own while keeping the motion and noise/cadence values.
+
+---
+
 ## Quick Start
 
 ```sh
