@@ -74,7 +74,7 @@ def DeforumAnimArgs():
             "type": "radio",
             "choices": ['replicate', 'wrap'],
             "value": "replicate",
-            "info": "controls pixel generation method for images smaller than the frame. hover on the options to see more info"
+            "info": "how edge pixels are handled when the warped canvas doesn't fill the frame. 'replicate' stretches the nearest edge pixel (recommended — avoids seams). 'wrap' tiles the opposite edge, which can cause jarring mirror artifacts on 3D renders."
         },
         "angle": {
             "label": "Angle",
@@ -193,7 +193,7 @@ def DeforumAnimArgs():
             "label": "Enable steps scheduling",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "allows changing the diffusion step count per keyframe. Mainly useful for unlocking step counts above 200. Otherwise behaves similarly to strength schedule — more steps = more detail but slower renders. Default GitHub value: disabled."
         },
         "steps_schedule": {
             "label": "Steps schedule",
@@ -223,19 +223,19 @@ def DeforumAnimArgs():
             "label": "Near schedule",
             "type": "textbox",
             "value": "0: (200)",
-            "info": ""
+            "info": "near clipping plane distance for 3D depth warping. Higher values (200+) push the cutoff further back, reducing ugly depth artifacts and edge clipping on close objects. Default GitHub value is 200 — going lower (e.g. 20) causes aggressive near-plane popping."
         },
         "far_schedule": {
             "label": "Far schedule",
             "type": "textbox",
             "value": "0: (10000)",
-            "info": ""
+            "info": "far clipping plane distance for 3D depth warping. Controls how far into the scene depth calculations reach. Default GitHub value is 10000. Rarely needs changing unless you see depth artifacts on distant backgrounds."
         },
         "seed_schedule": {
             "label": "Seed schedule",
             "type": "textbox",
             "value": '0:(s), 1:(-1), "max_f-2":(-1), "max_f-1":(s)',
-            "info": ""
+            "info": "keyframe specific seed values. Only active when Seed behavior is set to 'schedule'. Use -1 for random per frame, or set an exact integer to lock a frame to a specific seed. Default wraps: starts and ends on the initial seed (s), random in between."
         },
         "pix2pix_img_cfg_scale_schedule": {
             "label": "Pix2Pix img CFG schedule",
@@ -247,25 +247,25 @@ def DeforumAnimArgs():
             "label": "Enable Subseed scheduling",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "enables per-frame control of a secondary seed that blends with the main seed. Useful for subtle variation without full randomness. Default GitHub value: disabled."
         },
         "subseed_schedule": {
             "label": "Subseed schedule",
             "type": "textbox",
             "value": "0: (1)",
-            "info": ""
+            "info": "the secondary seed value to blend with the main seed each frame. Only active when 'Enable Subseed scheduling' is checked."
         },
         "subseed_strength_schedule": {
             "label": "Subseed strength schedule",
             "type": "textbox",
             "value": "0: (0)",
-            "info": ""
+            "info": "how strongly the subseed influences each frame (0=none, 1=full). At 0 the subseed has no effect. Blend in gradually (e.g. 0.1–0.3) for subtle organic variation without breaking temporal coherence."
         },
         "enable_sampler_scheduling": {
             "label": "Enable sampler scheduling",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "allows switching samplers mid-render at specific keyframes. Rarely needed — only use if you want a deliberate style shift at a known frame. Default GitHub value: disabled."
         },
         "sampler_schedule": {
             "label": "Sampler schedule",
@@ -277,25 +277,25 @@ def DeforumAnimArgs():
             "label": "Use noise mask",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "applies a video mask to control where noise is injected each frame. When enabled, noise only appears in unmasked regions. Requires a mask video source. Default GitHub value: disabled."
         },
         "mask_schedule": {
             "label": "Mask schedule",
             "type": "textbox",
             "value": '0: ("{video_mask}")',
-            "info": ""
+            "info": "keyframed mask values. Points to a video mask file that controls which areas of the frame are affected by generation. Only relevant when using Video Input mode or noise masking."
         },
         "noise_mask_schedule": {
             "label": "Noise mask schedule",
             "type": "textbox",
             "value": '0: ("{video_mask}")',
-            "info": ""
+            "info": "same as mask schedule but applied specifically to noise injection rather than the full generation. Lets you add noise only in certain regions of the frame."
         },
         "enable_checkpoint_scheduling": {
             "label": "Enable checkpoint scheduling",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "allows switching to a completely different model checkpoint at specific keyframes. Powerful for style shifts mid-render but can cause jarring visual discontinuity. Default GitHub value: disabled."
         },
         "checkpoint_schedule": {
             "label": "allows keyframing different sd models. Use *full* name as appears in ui dropdown",
@@ -307,25 +307,25 @@ def DeforumAnimArgs():
             "label": "Enable CLIP skip scheduling",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "allows changing CLIP skip per keyframe. CLIP skip controls how many layers from the end of the CLIP text encoder are skipped — higher values (2–4) produce more abstract/loose prompt interpretation, lower values (1) follow prompts more precisely. Default GitHub value: disabled."
         },
         "clipskip_schedule": {
             "label": "CLIP skip schedule",
             "type": "textbox",
             "value": "0: (2)",
-            "info": ""
+            "info": "CLIP skip value per keyframe. 1 = full prompt adherence (SD 1.x default). 2 = slightly looser, often used with anime/stylized models. Higher values increasingly ignore fine prompt detail. Only active when 'Enable CLIP skip scheduling' is checked."
         },
         "enable_noise_multiplier_scheduling": {
             "label": "Enable noise multiplier scheduling",
             "type": "checkbox",
             "value": True,
-            "info": ""
+            "info": "enables per-frame control of a noise multiplier applied on top of the noise schedule. Default GitHub value: enabled at 1.05. When disabled, noise_schedule values are used as-is with no multiplier."
         },
         "noise_multiplier_schedule": {
             "label": "Noise multiplier schedule",
             "type": "textbox",
             "value": "0: (1.05)",
-            "info": ""
+            "info": "scales the noise_schedule value by this multiplier each frame. 1.0 = no change. Values above 1.0 add slightly more noise than scheduled (1.05 is the default — a small boost for organic texture). Values below 1.0 reduce noise further. Only active when 'Enable noise multiplier scheduling' is checked."
         },
         "resume_from_timestring": {
             "label": "Resume from timestring",
@@ -914,14 +914,14 @@ def DeforumArgs():
             "type": "radio",
             "choices": ['reroll', 'interrupt', 'ignore'],
             "value": "ignore",
-            "info": ""
+            "info": "what to do if a frame comes out nearly black/blank. 'reroll' re-generates the frame with a new seed and tries again (up to Patience attempts). 'interrupt' stops the entire render when a blank is detected. 'ignore' keeps the blank frame and continues — safest for long unattended renders. Default GitHub value: ignore."
         },
         "reroll_patience": {
             "label": "Reroll patience",
             "type": "number",
             "precision": None,
             "value": 10,
-            "info": ""
+            "info": "how many times to re-generate a blank frame before giving up. Only matters when 'Reroll blank frames' is set to 'reroll'. If all attempts still produce a blank, Deforum falls back to using the last good frame. Default GitHub value: 10."
         },
         "motion_preview_mode": {
             "label": "Motion preview mode (dry run).",
