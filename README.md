@@ -7,6 +7,34 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 
 ---
 
+## 🏆 Best settings ever — Spore Mandala
+
+The single best result to date. A 15,000-frame, 1024x1024, 30fps two-cycle journey:
+geometric node-mandalas → a fractalized biological universe (mushroom caves, hidden
+faces, eyes, owls and wolves, fractal butterflies and caterpillars) → vast empty space
+→ wormhole → biological singularity, then repeats. Hidden faces and creatures emerge
+"out of nowhere" throughout. Negatives live in the negative-prompt field, not inline.
+
+**[`examples/Spore_Mandala_BEST_EVER_settings.txt`](examples/Spore_Mandala_BEST_EVER_settings.txt)**
+
+The numbers that matter for this one:
+
+| Setting | Value | Why |
+|---|---|---|
+| Sampler / scheduler | DPM++ 2M SDE / Karras | smooth, detail-preserving |
+| Steps | 35 | clean frames, fast enough for 15k |
+| `strength_schedule` | `0:(0.7)` | strong scene persistence with init |
+| `cfg_scale_schedule` | `0: (8)` | punchy guidance for dense psychedelia |
+| `noise_schedule` | `0: (0.01)` | low per-frame noise, stable scene |
+| `diffusion_cadence` | `8` | high consistency over thousands of frames |
+| `color_coherence` | LAB | locks the palette across the journey |
+| `midas_weight` | `-0.3` | inverted depth = the signature inside-out psychedelic warp |
+| `translation_z` | `0: (2.25)` | steady forward travel through the worlds |
+| Keyframes | 43 @ 350-frame spacing | dense schedule, two full cycles |
+| `add-detail-xl` LoRA | `0.8` | maximum fine detail without crunch |
+
+---
+
 ## ⭐ Recommended starting settings
 
 The single best long-form recipe to date is included as a ready-to-load preset:
