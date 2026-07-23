@@ -120,36 +120,36 @@ def setup_controlnet_ui_raw():
 
     def create_model_in_tab_ui(cn_id):
         with gr.Row():
-            enabled = gr.Checkbox(label="Enable", value=False, interactive=True)
-            pixel_perfect = gr.Checkbox(label="Pixel Perfect", value=False, visible=False, interactive=True)
-            low_vram = gr.Checkbox(label="Low VRAM", value=False, visible=False, interactive=True)
-            overwrite_frames = gr.Checkbox(label='Overwrite input frames', value=True, visible=False, interactive=True)
+            enabled = gr.Checkbox(label="Enable", value=False, interactive=True, info="turn this ControlNet unit on. Each unit guides generation from your video with a different model (depth, tile, openpose, temporalnet, etc.).")
+            pixel_perfect = gr.Checkbox(label="Pixel Perfect", value=False, visible=False, interactive=True, info="auto-matches the preprocessor resolution to your output size. RECOMMENDED: on. Overrides the Annotator resolution slider.")
+            low_vram = gr.Checkbox(label="Low VRAM", value=False, visible=False, interactive=True, info="splits CN processing to save VRAM. Only enable if you get out-of-memory errors - it slows rendering. Leave off on 16GB+.")
+            overwrite_frames = gr.Checkbox(label='Overwrite input frames', value=True, visible=False, interactive=True, info="re-extract this unit's input frames from the video each run. Leave ON unless you prepared frames manually.")
         with gr.Row(visible=False) as mod_row:
-            module = gr.Dropdown(cn_preprocessors, label=f"Preprocessor", value="none", interactive=True)
-            model = gr.Dropdown(cn_models, label=f"Model", value="None", interactive=True)
+            module = gr.Dropdown(cn_preprocessors, label=f"Preprocessor", value="none", interactive=True, info="how the input frame is processed before CN sees it (depth_anything_v2=depth map, tile_resample=tile, openpose_full=pose). MUST match the Model family. Use 'none' for models that take the raw frame (ip2p, temporalnet, QR Monster).")
+            model = gr.Dropdown(cn_models, label=f"Model", value="None", interactive=True, info="the ControlNet model. Must match the preprocessor family AND your checkpoint architecture - SD1.5 CN models only work with SD1.5 checkpoints, SDXL CN only with SDXL.")
             refresh_models = ToolButton(value=refresh_symbol)
             refresh_models.click(refresh_all_models, model, model)
         with gr.Row(visible=False) as weight_row:
-            weight = gr.Textbox(label="Weight schedule", lines=1, value='0:(1)', interactive=True)
+            weight = gr.Textbox(label="Weight schedule", lines=1, value='0:(1)', interactive=True, info="how strongly this unit influences the image. 0.3-0.5 = light (more melt/freedom), 0.7-1.0 = strong structural lock. Schedulable: '0:(0.5), 1000:(0.8)'.")
         with gr.Row(visible=False) as start_cs_row:
-            guidance_start = gr.Textbox(label="Starting Control Step schedule", lines=1, value='0:(0.0)', interactive=True)
+            guidance_start = gr.Textbox(label="Starting Control Step schedule", lines=1, value='0:(0.0)', interactive=True, info="at what fraction of the diffusion steps this unit STARTS applying. 0.0 = from the first step. Raise for more early creative freedom.")
         with gr.Row(visible=False) as end_cs_row:
-            guidance_end = gr.Textbox(label="Ending Control Step schedule", lines=1, value='0:(1.0)', interactive=True)
+            guidance_end = gr.Textbox(label="Ending Control Step schedule", lines=1, value='0:(1.0)', interactive=True, info="at what fraction of steps this unit STOPS applying. 1.0 = all the way. Lower (0.8) to free up fine detail at the end.")
             model_dropdowns.append(model)
         with gr.Column(visible=False) as advanced_column:
-            processor_res = gr.Slider(label="Annotator resolution", value=64, minimum=64, maximum=2048, interactive=False)
+            processor_res = gr.Slider(label="Annotator resolution", value=64, minimum=64, maximum=2048, interactive=False, info="resolution the preprocessor runs at. Match output size (1024 for SDXL, 512-768 for SD1.5). Pixel Perfect overrides this.")
             threshold_a = gr.Slider(label="Threshold A", value=64, minimum=64, maximum=1024, interactive=False)
             threshold_b = gr.Slider(label="Threshold B", value=64, minimum=64, maximum=1024, interactive=False)
         with gr.Row(visible=False) as vid_path_row:
-            vid_path = gr.Textbox(value='', label="ControlNet Input Video/ Image Path", interactive=True)
+            vid_path = gr.Textbox(value='', label="ControlNet Input Video/ Image Path", interactive=True, info="path to the video this unit reads for vid2vid - usually the SAME clip as your main Video init path. Leave empty if LoopBack mode is on.")
         with gr.Row(visible=False) as mask_vid_path_row:  # invisible temporarily since 26-04-23 until masks are fixed
             mask_vid_path = gr.Textbox(value='', label="ControlNet Mask Video/ Image Path (*NOT WORKING, kept in UI for CN's devs testing!*)", interactive=True)
         with gr.Row(visible=False) as control_mode_row:
-            control_mode = gr.Radio(choices=["Balanced", "My prompt is more important", "ControlNet is more important"], value="Balanced", label="Control Mode", interactive=True)
+            control_mode = gr.Radio(choices=["Balanced", "My prompt is more important", "ControlNet is more important"], value="Balanced", label="Control Mode", interactive=True, info="balance of prompt vs ControlNet. Balanced (recommended) = equal. 'My prompt is more important' = looser structure/more style. 'ControlNet is more important' = strong structural lock.")
         with gr.Row(visible=False) as env_row:
-            resize_mode = gr.Radio(choices=["Outer Fit (Shrink to Fit)", "Inner Fit (Scale to Fit)", "Just Resize"], value="Inner Fit (Scale to Fit)", label="Resize Mode", interactive=True)
+            resize_mode = gr.Radio(choices=["Outer Fit (Shrink to Fit)", "Inner Fit (Scale to Fit)", "Just Resize"], value="Inner Fit (Scale to Fit)", label="Resize Mode", interactive=True, info="how the input fits the canvas when aspect ratios differ. 'Inner Fit' (recommended) scales to fit; 'Just Resize' stretches; 'Outer Fit' shrinks to fit.")
         with gr.Row(visible=False) as control_loopback_row:
-            loopback_mode = gr.Checkbox(label="LoopBack mode", value=False, interactive=True)
+            loopback_mode = gr.Checkbox(label="LoopBack mode", value=False, interactive=True, info="feeds the PREVIOUS generated frame into this unit instead of the source video. Essential for TemporalNet (anti-flicker). When on, leave the video path empty.")
         hide_output_list = [pixel_perfect, low_vram, mod_row, module, weight_row, start_cs_row, end_cs_row, env_row, overwrite_frames, vid_path_row, control_mode_row, mask_vid_path_row,
                             control_loopback_row]  # add mask_vid_path_row when masks are working again
         for cn_output in hide_output_list:

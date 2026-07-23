@@ -74,7 +74,7 @@ def DeforumAnimArgs():
             "type": "radio",
             "choices": ['replicate', 'wrap'],
             "value": "replicate",
-            "info": "how edge pixels are handled when the warped canvas doesn't fill the frame. 'replicate' stretches the nearest edge pixel (recommended — avoids seams). 'wrap' tiles the opposite edge, which can cause jarring mirror artifacts on 3D renders."
+            "info": "how edge pixels are handled when the warped canvas doesn't fill the frame. 'replicate' stretches the nearest edge pixel (safe default, no seams). 'wrap' tiles the opposite edge. SUGGESTED: wrap — the proven setting for the smooth psychedelic long-form renders."
         },
         "angle": {
             "label": "Angle",
@@ -107,7 +107,7 @@ def DeforumAnimArgs():
             "label": "Translation Z",
             "type": "textbox",
             "value": "0: (1.75)",
-            "info": "move canvas towards/away from view [speed set by FOV]"
+            "info": "move canvas towards/away from view [speed set by FOV]. SUGGESTED (smooth long-form): 0: (2.25) — slow steady push-in."
         },
         "transform_center_x": {
             "label": "Transform Center X",
@@ -174,20 +174,20 @@ def DeforumAnimArgs():
             "label": "Noise schedule",
             "type": "textbox",
             "value": "0: (0.065)",
-            "info": "amount of noise added per frame to increase diversity. Higher = more random variation each frame. 0.065 is a good default; try 0.03-0.08 for smooth animations."
+            "info": "amount of noise added per frame. Higher = more flicker/drift. SUGGESTED (proven smooth value): 0.01 — low per-frame noise keeps long renders stable."
         },
         "strength_schedule": {
             "label": "Strength schedule",
             "type": "textbox",
             "value": "0: (0.65)",
-            "info": "amount of presence of previous frame to influence next frame, also controls steps in the following formula [steps - (strength_schedule * steps)]"
+            "info": "amount of presence of previous frame to influence next frame, also controls steps via [steps - (strength_schedule * steps)]. SUGGESTED (smooth long-form): 0.7. For vid2vid melt, 0.7-0.8."
         },
         "contrast_schedule": "0: (1.0)",
         "cfg_scale_schedule": {
             "label": "CFG scale schedule",
             "type": "textbox",
             "value": "0: (7)",
-            "info": "how closely the image should conform to the prompt. Lower values produce more creative results. (recommended range 5-15)`"
+            "info": "how closely the image should conform to the prompt. Lower = more creative. SUGGESTED (proven value): 8. (range 5-15)`"
         },
         "enable_steps_scheduling": {
             "label": "Enable steps scheduling",
@@ -205,7 +205,7 @@ def DeforumAnimArgs():
             "label": "FOV schedule",
             "type": "textbox",
             "value": "0: (70)",
-            "info": "adjusts the scale at which the canvas is moved in 3D by the translation_z value. [Range -180 to +180, with 0 being undefined. Values closer to 180 will make the image have less depth, while values closer to 0 will allow more depth]"
+            "info": "adjusts the scale at which the canvas is moved in 3D by the translation_z value. [Range -180 to +180, with 0 being undefined. Values closer to 180 will make the image have less depth, while values closer to 0 will allow more depth]. SUGGESTED (smooth long-form): 80."
         },
         "aspect_ratio_schedule": {
             "label": "Aspect Ratio schedule",
@@ -223,13 +223,13 @@ def DeforumAnimArgs():
             "label": "Near schedule",
             "type": "textbox",
             "value": "0: (200)",
-            "info": "near clipping plane distance for 3D depth warping. Higher values (200+) push the cutoff further back, reducing ugly depth artifacts and edge clipping on close objects. Default GitHub value is 200 — going lower (e.g. 20) causes aggressive near-plane popping."
+            "info": "near clipping plane distance for 3D depth warping. SUGGESTED (proven smooth value): 100. (GitHub default is 200; higher pushes the cutoff back, very low values cause near-plane popping.)"
         },
         "far_schedule": {
             "label": "Far schedule",
             "type": "textbox",
             "value": "0: (10000)",
-            "info": "far clipping plane distance for 3D depth warping. Controls how far into the scene depth calculations reach. Default GitHub value is 10000. Rarely needs changing unless you see depth artifacts on distant backgrounds."
+            "info": "far clipping plane distance for 3D depth warping. Controls how far into the scene depth calculations reach. Default GitHub value is 10000. SUGGESTED (proven value): 20000. Rarely needs changing unless you see depth artifacts on distant backgrounds."
         },
         "seed_schedule": {
             "label": "Seed schedule",
@@ -395,7 +395,7 @@ def DeforumAnimArgs():
             "type": "dropdown",
             "choices": ['None', 'HSV', 'LAB', 'RGB', 'Video Input', 'Image'],
             "value": "LAB",
-            "info": "keeps colors consistent across frames. LAB is best for most renders. HSV preserves hue/saturation. RGB is simplest. None = no correction (colors may drift)."
+            "info": "keeps colors consistent across frames. SUGGESTED (proven value): LAB — locks the palette for smooth long-form. HSV preserves hue/sat, RGB simplest. None = colors drift (use None for vid2vid so it follows the source video)."
         },
         "color_coherence_image_path": {
             "label": "Color coherence image path",
@@ -429,7 +429,7 @@ def DeforumAnimArgs():
             "maximum": 50,
             "step": 1,
             "value": 2,
-            "info": "how many in-between frames are generated via warping only (no diffusion). Higher = faster renders but less detail per frame. 1 = every frame diffused (slow, sharp). 2-4 is a good balance."
+            "info": "how many in-between frames are generated via warping only (no diffusion). Higher = faster, smoother, less detail per frame. SUGGESTED (proven smooth long-form): 8 — strong consistency for long psychedelic renders. For vid2vid use 1-2 so it tracks the source video."
         },
         "optical_flow_cadence": {
             "label": "Optical flow cadence",
@@ -517,7 +517,7 @@ def DeforumAnimArgs():
             "type": "number",
             "precision": None,
             "value": 0.2,
-            "info": "sets a midpoint at which a depth-map is to be drawn: range [-1 to +1]. 0.2 is a good default; higher values give depth more influence over the warp.",
+            "info": "sets a midpoint at which a depth-map is to be drawn: range [-1 to +1]. SUGGESTED (signature look): -0.3 — negative inverts the depth for the psychedelic inside-out warp (intentional, not a bug). Positive ~0.4 = conventional 3D depth.",
             "visible": True
         },
         "padding_mode": {
@@ -589,7 +589,7 @@ def DeforumAnimArgs():
             "label": "Comp alpha schedule",
             "type": "textbox",
             "value": "0:(0.5)",
-            "info": ""
+            "info": "blend between source video and generated image when compositing. Higher (0.65-0.8) = footage shows through more (follows the video); lower = more new generated detail. The main follow-vs-transform dial for hybrid. SUGGESTED: 0.65."
         },
         "hybrid_comp_mask_blend_alpha_schedule": {
             "label": "Comp mask blend alpha schedule",
@@ -619,26 +619,26 @@ def DeforumAnimArgs():
             "label": "Flow factor schedule",
             "type": "textbox",
             "value": "0:(1)",
-            "info": ""
+            "info": "strength of the optical-flow motion borrowed from the video. 1.0 = full video motion; lower dampens it. SUGGESTED: 1.0."
         },
         "hybrid_generate_inputframes": {
             "label": "Generate inputframes",
             "type": "checkbox",
             "value": False,
-            "info": ""
+            "info": "extract frames from your video for hybrid processing. MUST be ON to use Hybrid Video. Pairs with the Video init path."
         },
         "hybrid_generate_human_masks": {
             "label": "Generate human masks",
             "type": "radio",
             "choices": ['None', 'PNGs', 'Video', 'Both'],
             "value": "None",
-            "info": ""
+            "info": "auto-generate masks of people in the video. Only needed if compositing or protecting human subjects. Leave None unless required."
         },
         "hybrid_use_first_frame_as_init_image": {
             "label": "First frame as init image",
             "type": "checkbox",
             "value": True,
-            "info": "",
+            "info": "use the first extracted video frame as the init for frame 0. RECOMMENDED on for vid2vid so the animation starts from your footage.",
             "visible": False
         },
         "hybrid_motion": {
@@ -646,20 +646,20 @@ def DeforumAnimArgs():
             "type": "radio",
             "choices": ['None', 'Optical Flow', 'Perspective', 'Affine'],
             "value": "None",
-            "info": ""
+            "info": "how the video motion drives the animation. Optical Flow (recommended) smoothly follows the video movement - the key to smooth hybrid vid2vid. Perspective/Affine track via matched points. None = no borrowed motion."
         },
         "hybrid_motion_use_prev_img": {
             "label": "Motion use prev img",
             "type": "checkbox",
             "value": False,
-            "info": "",
+            "info": "calculate motion against the previous GENERATED frame instead of the previous video frame. Can improve coherence on heavily stylized output.",
             "visible": False
         },
         "hybrid_flow_consistency": {
             "label": "Flow consistency mask",
             "type": "checkbox",
             "value": False,
-            "info": "",
+            "info": "generate a consistency mask that reduces optical-flow ghosting/artifacts on fast or complex motion.",
             "visible": False
         },
         "hybrid_consistency_blur": {
@@ -676,7 +676,7 @@ def DeforumAnimArgs():
             "type": "radio",
             "choices": ['RAFT', 'DIS Medium', 'DIS Fine', 'Farneback'],
             "value": "RAFT",
-            "info": "",
+            "info": "the optical-flow algorithm. DIS Medium (recommended) = good speed/quality balance. RAFT = highest quality, slower. DIS Fine = sharper, slower. Farneback = fastest, roughest.",
             "visible": False
         },
         "hybrid_composite": 'None',  # ['None', 'Normal', 'Before Motion', 'After Generation']
@@ -684,7 +684,7 @@ def DeforumAnimArgs():
             "label": "Use init image as video",
             "type": "checkbox",
             "value": False,
-            "info": "",
+            "info": "use a static init image as the hybrid source instead of the video. Leave off for normal vid2vid.",
         },
         "hybrid_comp_mask_type": {
             "label": "Comp mask type",
@@ -1008,6 +1008,7 @@ def DeforumOutputArgs():
             "maximum": 240,
             "step": 1,
             "value": 15,
+            "info": "frames per second of the output video. MATCH your source video fps for vid2vid so timing and playback speed are correct.",
         },
         "make_gif": {
             "label": "Make GIF",
@@ -1056,12 +1057,14 @@ def DeforumOutputArgs():
             "type": "dropdown",
             "choices": ['x2', 'x3', 'x4'],
             "value": "x2",
+            "info": "how much to upscale output. Use x2-x3 to take a 720p render up to 1080p+.",
         },
         "r_upscale_model": {
             "label": "Upscale model",
             "type": "dropdown",
             "choices": ['realesr-animevideov3', 'realesrgan-x4plus', 'realesrgan-x4plus-anime'],
             "value": 'realesr-animevideov3',
+            "info": "the upscaler. realesr-animevideov3 suits stylized/animated content; realesrgan-x4plus for photoreal.",
         },
         "r_upscale_keep_imgs": {
             "label": "Keep Imgs",
@@ -1081,7 +1084,7 @@ def DeforumOutputArgs():
             "type": "radio",
             "choices": ['None', 'RIFE v4.6', 'FILM'],
             "value": "None",
-            "info": "select the frame interpolation engine. hover on the options for more info"
+            "info": "post-render smoothing pass. RIFE v4.6 (recommended) generates smooth in-between frames - great for de-janking vid2vid. FILM = slower, better for big morphs. Makes a smoothed video alongside the raw one. SUGGESTED: RIFE v4.6 + Interp X 2-4."
         },
         "frame_interpolation_x_amount": {
             "label": "Interp X",
@@ -1090,6 +1093,7 @@ def DeforumOutputArgs():
             "maximum": 10,
             "step": 1,
             "value": 2,
+            "info": "how many smooth in-between frames RIFE/FILM generates per rendered frame. 2 = doubles the framerate. SUGGESTED: 2-4 to smooth janky vid2vid.",
         },
         "frame_interpolation_slow_mo_enabled": {
             "label": "Slow-Mo",
