@@ -7,16 +7,16 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 
 ---
 
-## 🎬 Start here — [`render-kit/`](render-kit/)
+## 🎬 Start here — Microcosm ([`microcosm/`](microcosm/))
 
 **The render viewer, my best settings, and the notes behind them.** The viewer needs nothing installed — download one HTML file, double-click it, drag a render in, and watch the prompt / LoRAs / FOV / camera update **at the frame you're looking at**. Tick two renders to compare every parameter side by side with the differences highlighted.
 
-- **[`render-kit/Deforum_Render_Viewer.html`](render-kit/Deforum_Render_Viewer.html)** — the viewer (no install, works offline)
-- **[`render-kit/BEST_DEFAULT_settings.txt`](render-kit/BEST_DEFAULT_settings.txt)** — my best recipe, loadable, no LoRA dependencies
-- **[`render-kit/BEST_PRACTICES.txt`](render-kit/BEST_PRACTICES.txt)** — what causes streaking, the smoothness recipes, camera rules
-- **[`render-kit/gallery-tab/`](render-kit/gallery-tab/)** — optional: the same gallery live inside A1111
+- **[`microcosm/Microcosm.html`](microcosm/Microcosm.html)** — the viewer (no install, works offline)
+- **[`microcosm/BEST_DEFAULT_settings.txt`](microcosm/BEST_DEFAULT_settings.txt)** — my best recipe, loadable, no LoRA dependencies
+- **[`microcosm/BEST_PRACTICES.txt`](microcosm/BEST_PRACTICES.txt)** — what causes streaking, the smoothness recipes, camera rules
+- **[`microcosm/gallery-tab/`](microcosm/gallery-tab/)** — optional: the same gallery live inside A1111
 
-**[→ Full guide in `render-kit/README.md`](render-kit/README.md)**
+**[→ Full guide in `microcosm/README.md`](microcosm/README.md)**
 
 ---
 

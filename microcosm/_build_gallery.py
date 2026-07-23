@@ -1932,19 +1932,19 @@ document.addEventListener('drop',function(ev){
 
 import time as _time
 if STANDALONE:
-    PAGE_TITLE = "Deforum Render Viewer"
+    PAGE_TITLE = "Microcosm"
     PAGE_SUB = ("Standalone viewer &mdash; drag your own Deforum render (.mp4) plus its _settings.txt onto the "
         "drop zone below, or drag a whole render folder. Drop 2+ to compare them side-by-side with synced playback. "
         "Nothing is uploaded anywhere: everything runs locally in your browser.")
-    HEAD_TITLE = "Deforum Render Viewer"
+    HEAD_TITLE = "Microcosm"
     LIB_LINE = ("No library is baked into this page &mdash; everything you view comes from files you "
         "drop or browse. Nothing is uploaded anywhere.")
 else:
-    PAGE_TITLE = "Master Gallery"
+    PAGE_TITLE = "Microcosm"
     PAGE_SUB = (f"{len(keep)} renders (every one in the folder) &middot; {trashed} duplicate/bad moved to "
         "_trash_review &middot; play a video to see the prompt/LoRAs/camera change over time &middot; "
         "or drag in any render to add/compare it")
-    HEAD_TITLE = "Master Gallery"
+    HEAD_TITLE = "Microcosm"
     LIB_LINE = (f"Opened from disk: showing the snapshot built {_time.strftime('%Y-%m-%d %H:%M')} "
         f"({len(keep)} renders from <b>{html.escape(ROOT)}</b>). Open this page via the WebUI's "
         "Render Gallery tab for LIVE folders, rescan, and editing.")

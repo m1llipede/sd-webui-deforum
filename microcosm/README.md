@@ -1,4 +1,6 @@
-# Render Kit
+# Microcosm
+
+*Deforum render viewer, best-settings recipe, and the notes behind them.*
 
 Tools for reviewing Deforum renders and dialling in settings, plus the settings and notes behind them.
 
@@ -6,7 +8,7 @@ Three independent pieces. The first needs nothing installed — you can use it i
 
 | | What it is | Needs |
 |---|---|---|
-| **[`Deforum_Render_Viewer.html`](Deforum_Render_Viewer.html)** | Inspect + compare renders | a browser |
+| **[`Microcosm.html`](Microcosm.html)** | Inspect + compare renders | a browser |
 | **[`BEST_DEFAULT_settings.txt`](BEST_DEFAULT_settings.txt)** | My best working recipe, ready to load | Deforum |
 | **[`BEST_PRACTICES.txt`](BEST_PRACTICES.txt)** | What makes renders good or garbage | nothing |
 | **[`gallery-tab/`](gallery-tab/)** | The same viewer, live inside A1111 | A1111 (optional) |
@@ -15,7 +17,7 @@ Three independent pieces. The first needs nothing installed — you can use it i
 
 ## 1. The viewer — no install
 
-**[Download `Deforum_Render_Viewer.html`](Deforum_Render_Viewer.html)** (right-click → Save link as), then double-click it.
+**[Download `Microcosm.html`](Microcosm.html)** (right-click → Save link as), then double-click it.
 
 That's the entire setup. No Python, no pip, no server, no build step, no internet — it's one 107 KB file with everything inline and zero external references. It works with your wifi off, and nothing you open in it ever leaves your machine.
 
