@@ -7,6 +7,28 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 
 ---
 
+## 🎬 Start here — [`render-kit/`](render-kit/)
+
+**The render viewer, my best settings, and the notes behind them.** The viewer needs nothing installed — download one HTML file, double-click it, drag a render in, and watch the prompt / LoRAs / FOV / camera update **at the frame you're looking at**. Tick two renders to compare every parameter side by side with the differences highlighted.
+
+- **[`render-kit/Deforum_Render_Viewer.html`](render-kit/Deforum_Render_Viewer.html)** — the viewer (no install, works offline)
+- **[`render-kit/BEST_DEFAULT_settings.txt`](render-kit/BEST_DEFAULT_settings.txt)** — my best recipe, loadable, no LoRA dependencies
+- **[`render-kit/BEST_PRACTICES.txt`](render-kit/BEST_PRACTICES.txt)** — what causes streaking, the smoothness recipes, camera rules
+- **[`render-kit/gallery-tab/`](render-kit/gallery-tab/)** — optional: the same gallery live inside A1111
+
+**[→ Full guide in `render-kit/README.md`](render-kit/README.md)**
+
+---
+
+## Panel additions in this fork
+
+- **Preset dropdown** — pick a saved recipe, it loads into every field. Presets are ordinary complete settings `.txt` files in a `presets/` folder next to the WebUI.
+- **Drag-and-drop preset import** — drop any number of settings files to add them as presets. Each is validated, has its `init_image` repaired if the file moved (or `use_init` turned off if it's genuinely gone — this silently breaks loads otherwise), and stale resume-timestrings cleared.
+- **Folders accordion** — init-images and video/ControlNet input folders with a native folder picker. Models folder shown read-only, with a note that it's fixed at launch via `--ckpt-dir`.
+- **SUGGESTED values and info text** on parameters and ControlNet toggles that shipped with none.
+
+---
+
 ## 🏆 Best settings ever — Spore Mandala
 
 The single best result to date. A 15,000-frame, 1024x1024, 30fps two-cycle journey:

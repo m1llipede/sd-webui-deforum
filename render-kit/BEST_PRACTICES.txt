@@ -1,0 +1,41 @@
+DEFORUM BEST PRACTICES — Brian's lab notes (hard-won, every line came from a real render)
+Vello: add yours below, or edit anything here.
+
+== CHECKPOINTS ==
+- MOHAWK_v20 is the workhorse. Best all-round color + detail for these renders.
+- CyberRealisticXL V9 = strongest pure photorealism, but reads flatter on abstract/organic work.
+- RealVisXL came out flat and detail-less here. epiCRealism / Juggernaut on disk, barely tested.
+- The checkpoint matters MORE than prompt wording for killing the cartoony AI look.
+
+== THE STREAK / SPAGHETTI ZONE (how renders go bad) ==
+- Horror CREATURE LoRAs caused the radiating spaghetti-line streaking. They live in models/Lora/SDXL/Risky/ — leave them there.
+- Cadence 15 + strength 0.7 with 3D depth-warp also spaghettis on its own. Safe zone: cadence <= 10 in 3D (12+ is fine in 2D mode — no depth warp to accumulate), strength <= 0.6.
+- Any render past ~3000 frames drifts with master defaults; strength 0.6 + noise 0.02 was the fix that survived an A/B.
+- Fractal LoRAs were wrongly blamed once — exonerated. But the fractal/LINE loras (ral-mndlbrt etc. at high weight) still make hated spaghetti lines. Fractal_Fusion at LOW weight is the liked one.
+
+== SMOOTHNESS ==
+- Do NOT oscillate image-quality params (strength / noise / CFG / contrast / antiblur on sine waves). Six of them waving at once = visible breathing/flicker. Animate the CAMERA, keep image params FLAT.
+- Two proven smoothness paths: (1) LAB color coherence + Looper = locked palette, ultra stable, one mood; (2) color_coherence None + DIS Fine optical flow = smooth AND per-scene color shifts.
+- Best-ever recipe (Microcosm v2): MOHAWK, DPM++ 2M SDE/Karras, 40 steps, strength 0.6, noise 0.01, cadence 5, DIS Fine, LAB, translation_z 2.5, midas 0.5, seed 31415.
+
+== CAMERA / FOV ==
+- FOV floor is 40. Below that it wonks out. Sweep with cos: "0: (mid-amp*cos(2*3.14*t/PERIOD))", period 900-2000 frames.
+- FOV-SPEED COUPLING is the signature move: multiply every camera field by an envelope in phase with the FOV sweep, so telephoto = slow, wide = fast. Keep Z from fully stopping (envelope floor ~0.55).
+- Roller-coaster cam: roll never level, banks into turns; yaw/pitch phase-LEAD the translation so the camera looks INTO the curve before it turns.
+- 2D FAKE-3D: animation_mode 2D + enable_perspective_flip CAN fake depth, but NEVER oscillate the warp. Sine-waving angle/theta/phi/gamma rocks the flat canvas back and forth = instant seasick wobble (the 008 render Brian hated). If you use it: constant or one-direction drift on the lean, zoom + translation do the movement, no canvas roll. High cadence is safe there (no depth warp).
+- midas_weight NEGATIVE (-0.6) = Brian's inverted-depth look. Intentional, not a bug. border: wrap.
+
+== INIT IMAGES ==
+- The init's PALETTE + CONTRAST drive the whole render. Start from something colorful and high-contrast — never the dark-on-black images.
+- Always use_init=True with a real image. Beware the folder gotcha: settings often point at outputs/deforum_init_images/ while the images actually live in outputs/img2img-images/INIT_IMAGES/.
+- Vary the init per render. Reused inits get samey fast.
+
+== PROMPTS / LORAS ==
+- Keyframe every ~300 frames, dense 500+ char prompts. One scene subject + a modifier + camera language.
+- Photoreal language that works: name a real camera ("shot on a Sony Alpha 1 8K, 85mm f/1.4"), "RAW photo", "indistinguishable from a real photograph". Vague "hyperrealistic" alone does nothing.
+- Rotate 1-2 style LoRAs per keyframe for variety; add-detail-xl ~0.5-0.6 as the always-on utility. Anime/painterly/fae LoRAs (Ghibli, Shinkai, xl_more_art, FaeTastic) = instant cartoon; keep them out of photoreal work.
+- Organic/surreal subjects render beautifully; mechanical/clockwork content renders cartoony — avoid.
+- NEVER bake negative prompts into keyframes. One global negative box, filled by hand.
+
+== VELLO'S SECTION ==
+(add your stuff here)
