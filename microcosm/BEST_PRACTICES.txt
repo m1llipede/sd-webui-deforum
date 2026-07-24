@@ -10,7 +10,7 @@ Vello: add yours below, or edit anything here.
 == THE STREAK / SPAGHETTI ZONE (how renders go bad) ==
 - Horror CREATURE LoRAs caused the radiating spaghetti-line streaking. They live in models/Lora/SDXL/Risky/ — leave them there.
 - Cadence 15 + strength 0.7 with 3D depth-warp also spaghettis on its own. Safe zone: cadence <= 10 in 3D (12+ is fine in 2D mode — no depth warp to accumulate), strength <= 0.6.
-- Any render past ~3000 frames drifts with master defaults; strength 0.6 + noise 0.02 was the fix that survived an A/B.
+- Any render past ~3000 frames drifts with master defaults; strength 0.6 + noise 0.01 was the fix that survived an A/B.
 - Fractal LoRAs were wrongly blamed once — exonerated. But the fractal/LINE loras (ral-mndlbrt etc. at high weight) still make hated spaghetti lines. Fractal_Fusion at LOW weight is the liked one.
 
 == SMOOTHNESS ==
