@@ -545,9 +545,12 @@ function applyFilter(){
   });
   var cEl=document.getElementById('count');
   if(cEl){
+    // dropped renders live in their own container, outside cardsAll - count them too, or the
+    // standalone viewer reads "0 of 0 renders" while a render you just dropped is on screen
+    var nDrop=(typeof dropped!=='undefined' && dropped) ? dropped.length : 0;
     cEl.textContent='';
-    var b=document.createElement('b'); b.textContent=shown;
-    cEl.appendChild(b); cEl.appendChild(document.createTextNode(' of '+cardsAll.length+' renders'));
+    var b=document.createElement('b'); b.textContent=shown+nDrop;
+    cEl.appendChild(b); cEl.appendChild(document.createTextNode(' of '+(cardsAll.length+nDrop)+' renders'));
   }
   var emp=document.getElementById('emptystate');
   if(emp) emp.remove();
@@ -972,6 +975,7 @@ function renderCompare(){
     v.addEventListener('pause',function(){ syncPlay(v,false); });
   });
   if(typeof buildFreq==='function'){ buildFreq(); dropped.forEach(function(item){ renderColumn(item.pid); }); attachChecks(wrap); }
+  if(typeof applyFilter==='function') applyFilter();   // refresh the "N of N renders" count
 }
 
 var syncing=false;
