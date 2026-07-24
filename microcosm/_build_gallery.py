@@ -537,6 +537,9 @@ EXTRA_CSS = r"""
   padding:5px 14px;font-size:12.5px;cursor:pointer;margin:0 3px}
 .dzbtn:hover{color:var(--ink);border-color:var(--accent)}
 .dzlib{margin-top:9px;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.dzstatus{margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--ink-3);max-width:70ch;
+  margin-left:auto;margin-right:auto}
+.dzstatus.err{color:#ffc9c9}
 .dzlib b{color:var(--ink-2);font-weight:600}
 /* folders bar - the selectable paths, at the very top of the Gallery tab */
 /* the author display:flex below outranks the UA [hidden] rule, so state it explicitly -
@@ -672,6 +675,7 @@ EXTRA_HTML_HEAD = """<div class="tabbar" role="tablist">
       <button type="button" class="dzbtn" id="browsefiles">Browse files&hellip;</button>
       <button type="button" class="dzbtn" id="browsedir">Browse folder&hellip;</button>
       <div class="dzlib" id="dzlib">__LIBLINE__</div>
+      <div class="dzstatus" id="dzstatus"></div>
       <input type="file" id="pickfiles" multiple accept=".mp4,.txt,.json" hidden>
       <input type="file" id="pickdir" webkitdirectory hidden>
     </div>
@@ -942,31 +946,42 @@ function registerDataJS(pid,d){
   for(var lab in cam){ camFns[pid][lab]=compileExpr(cam[lab].js); }
 }
 
+/* Only these ever matter. A Deforum output folder also holds thousands of PNG frames; turning
+   every one into a File object took long enough to look like the page had ignored the drop. */
+function dropWanted(name){ return /\.(mp4|txt|json)$/i.test(name); }
 function getAllFileEntries(dataTransferItemList){
   return new Promise(function(resolve){
     var items=[];
     for(var i=0;i<dataTransferItemList.length;i++){
       var it=dataTransferItemList[i];
-      var entry = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null;
+      var entry=null;
+      try{ entry = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null; }catch(e){ entry=null; }
       if(entry) items.push(entry);
     }
     var entries=[];
     var pending=items.length;
-    if(!pending){ resolve([]); return; }
-    items.forEach(function(entry){ readEntry(entry, done); });
-    function done(){ pending--; if(pending<=0) resolve(entries); }
-    function readEntry(entry, cb){
+    if(!pending){ resolve([]); return; }        // caller falls back to dataTransfer.files
+    var settled=false;
+    function finish(){ if(settled) return; settled=true; resolve(entries); }
+    // never hang forever on a pathological tree - return whatever we have
+    var guard=setTimeout(finish, 20000);
+    items.forEach(function(entry){ readEntry(entry, done, 0); });
+    function done(){ pending--; if(pending<=0){ clearTimeout(guard); finish(); } }
+    function readEntry(entry, cb, depth){
       if(entry.isFile){
+        if(!dropWanted(entry.name)){ cb(); return; }   // skip PNG frame stacks etc
         entry.file(function(file){ entries.push(file); cb(); }, cb);
       } else if(entry.isDirectory){
+        if(depth>6){ cb(); return; }
         var reader=entry.createReader();
         var all=[];
         (function readBatch(){
           reader.readEntries(function(results){
             if(!results.length){
-              var sub=all.length;
+              var kids=all.filter(function(e2){ return e2.isDirectory || dropWanted(e2.name); });
+              var sub=kids.length;
               if(!sub){ cb(); return; }
-              all.forEach(function(e2){ readEntry(e2, function(){ sub--; if(sub<=0) cb(); }); });
+              kids.forEach(function(e2){ readEntry(e2, function(){ sub--; if(sub<=0) cb(); }, depth+1); });
             } else { all=all.concat(results); readBatch(); }
           }, cb);
         })();
@@ -2015,11 +2030,39 @@ var dropzoneEl=document.getElementById('dropzone');
 document.addEventListener('dragleave',function(ev){ if(ev.clientX<=0||ev.clientY<=0) dropzoneEl.classList.remove('drag'); });
 document.addEventListener('drop',function(ev){
   ev.preventDefault();
-  dropzoneEl.classList.remove('drag');
-  getAllFileEntries(ev.dataTransfer.items).then(function(files){
-    if(files.length) handleDropFiles(files);
+  if(dropzoneEl) dropzoneEl.classList.remove('drag');
+  var dt=ev.dataTransfer; if(!dt) return;
+  // dataTransfer is only valid during dispatch, so copy the plain list NOW. This is the
+  // fallback for every case where the directory-entry API hands back nothing - which is what
+  // made a drop look like it did literally nothing instead of saying so.
+  var plain=dt.files ? [].slice.call(dt.files) : [];
+  var hadDirItem=false;
+  if(dt.items){ for(var i=0;i<dt.items.length;i++){ if(dt.items[i].webkitGetAsEntry){ hadDirItem=true; break; } } }
+  dropBusy(true);
+  getAllFileEntries(dt.items||[]).then(function(files){
+    if(!files.length) files=plain.filter(function(f){ return dropWanted(f.name); });
+    dropBusy(false);
+    if(files.length){ handleDropFiles(files); return; }
+    dropFail(plain.length===0 && hadDirItem);
+  }).catch(function(){
+    dropBusy(false);
+    var f=plain.filter(function(x){ return dropWanted(x.name); });
+    if(f.length) handleDropFiles(f); else dropFail(true);
   });
 });
+function dropBusy(on){
+  var el=document.getElementById('dzstatus'); if(!el) return;
+  el.textContent = on ? 'Reading what you dropped…' : '';
+  el.className = 'dzstatus';
+}
+function dropFail(folderish){
+  var el=document.getElementById('dzstatus');
+  var msg = folderish
+    ? "Couldn't read that folder. Some browsers block reading dropped folders when the page is opened straight off disk. Use the “Browse folder…” button just above — it works the same and always does."
+    : "Nothing usable in that drop. It needs a rendered .mp4 (its _settings.txt alongside it gives you the live panel).";
+  if(el){ el.textContent=msg; el.className='dzstatus err'; }
+  else alert(msg);
+}
 """
 
 import time as _time
