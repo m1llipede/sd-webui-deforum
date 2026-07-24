@@ -1,4 +1,4 @@
-"""ONE master gallery combining both tools Brian likes:
+r"""ONE master gallery combining both tools Brian likes:
  - like _FOV_VIEWER: a LIVE panel synced to playback showing the prompt / LoRAs / FOV / camera changing
    over time (bigger text, EACH on its own row).
  - like _MASTER_RENDER_SHEET: every render as a vertical card with ALL settings listed below.
