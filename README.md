@@ -12,7 +12,7 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 **The render viewer, my best settings, and the notes behind them.** The viewer needs nothing installed — download one HTML file, double-click it, drag a render in, and watch the prompt / LoRAs / FOV / camera update **at the frame you're looking at**. Tick two renders to compare every parameter side by side with the differences highlighted.
 
 - **[`microcosm/Microcosm.html`](microcosm/Microcosm.html)** — the viewer (no install, works offline)
-- **[`microcosm/BEST_DEFAULT_settings.txt`](microcosm/BEST_DEFAULT_settings.txt)** — my best recipe, loadable, no LoRA dependencies
+- **[`microcosm/BEST_DEFAULT_settings.txt`](microcosm/BEST_DEFAULT_settings.txt)** — the real Microcosm recipe: prompts, full LoRA stack, init image
 - **[`microcosm/BEST_PRACTICES.txt`](microcosm/BEST_PRACTICES.txt)** — what causes streaking, the smoothness recipes, camera rules
 - **[`microcosm/gallery-tab/`](microcosm/gallery-tab/)** — optional: the same gallery live inside A1111
 

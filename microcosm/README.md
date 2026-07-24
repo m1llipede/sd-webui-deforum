@@ -51,19 +51,43 @@ That's exactly how Deforum saves them, so normally it just works.
 
 ---
 
-## 2. `BEST_DEFAULT_settings.txt` — my best recipe
+## 2. `BEST_DEFAULT_settings.txt` — the Microcosm recipe
 
-One complete, ready-to-load settings file. This is the "Microcosm v2" setup — the best long render I've made — with everything machine-specific stripped out.
+The actual Microcosm v2 settings — the render this whole thing is named after. Real prompts, real LoRA stack, nothing gutted. Only the machine-specific plumbing (output dir, resume state) has been cleared.
 
-**To use:** Deforum tab → **Settings File** box → paste the path → **Load all settings**. Then put your own prompts in and render.
+**To load it**, either:
 
-Deliberately portable:
+- **Drop it on the preset box** in the Deforum tab, then pick it from the **Preset** dropdown. (This fork adds that — drag in any number of settings files and they become presets.)
+- Or the old way: **Settings File** box → path → **Load all settings**.
 
-- **No LoRAs in the prompts**, so nothing is missing on your machine and you get zero "couldn't find Lora" warnings.
-- **No init image, no looper, no absolute paths** from my drive.
-- Checkpoint is `MOHAWK_v20`. If you don't have it, open the file in a text editor and change `sd_model_name` to any SDXL model you do have — **that one line is the only thing tying it to my setup.**
-- 5,400 frames (3 min at 30fps) so it's a real test, not a five-hour commitment. Change `max_frames` to taste.
-- 18 example prompts at 300-frame keyframes, written to show the photoreal prompt style described in BEST_PRACTICES.
+Then swap the prompts for your own and render.
+
+### What it needs
+
+**Checkpoint:** `MOHAWK_v20`. Any good SDXL model works — just pick a different one in the normal checkpoint dropdown, or change `sd_model_name` in the file.
+
+**Init image:** `microcosm-init.png` ships next to this file. Drop it into the **Init image** box — this fork auto-ticks "use init" when you do. (The settings reference it by filename, so point it wherever you keep it.)
+
+**LoRAs** — three on every keyframe, the rest as accents:
+
+| LoRA | Weight | Keyframes |
+|---|---|---|
+| `add-detail-xl` | 0.7 | all 50 |
+| `JuggerCineXL2` | 0.55 | all 50 |
+| `xl_more_art-full_v1` | 0.35 | all 50 |
+| `ral-amber-sdxl` | 0.35–0.45 | 38 |
+| `ral-trichome-sdxl` | 0.40 | 31 |
+| `ral-iricnt-sdxl` | 0.30 | 27 |
+| `coralbugXL` | 0.30–0.40 | 25 |
+| `ral-anmlsktn-sdxl-dora` | 0.35 | 20 |
+| `Fractal_Fusion-000009` | 0.30 | 17 |
+| `HR_Giger_SDXL` | — | 13 |
+| `ral-melting-sdxl` | — | 12 |
+| `epoxy_skull-sdxl`, `ral-blueresin-sdxl`, `fractalex` | — | 3–7 |
+
+Missing one isn't fatal — A1111 prints "couldn't find Lora" and carries on without it. The render still works, it just looks different. The three on every keyframe are the ones that matter most.
+
+**Heads up:** it's set to 15,000 frames, which is the full ~20-hour run. Drop `max_frames` to a few thousand for a first look.
 
 The recipe, and why (all covered in [`BEST_PRACTICES.txt`](BEST_PRACTICES.txt)):
 
