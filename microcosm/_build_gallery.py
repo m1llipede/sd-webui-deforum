@@ -539,6 +539,10 @@ EXTRA_CSS = r"""
 .dzlib{margin-top:9px;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
 .dzlib b{color:var(--ink-2);font-weight:600}
 /* folders bar - the selectable paths, at the very top of the Gallery tab */
+/* the author display:flex below outranks the UA [hidden] rule, so state it explicitly -
+   without this the server-only folder bar shows up in the shared offline viewer, where
+   Browse/Save/Rescan have no API to talk to (same trap .fb-ov[hidden] already guards) */
+.dirbar[hidden]{display:none}
 .dirbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 16px 12px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
   padding:10px 14px;max-width:calc(100vw - 36px)}
