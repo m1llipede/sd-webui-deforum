@@ -19,7 +19,7 @@ Three independent pieces. The first needs nothing installed — you can use it i
 
 **[Download `Microcosm.html`](Microcosm.html)** (right-click → Save link as), then double-click it.
 
-That's the entire setup. No Python, no pip, no server, no build step, no internet — it's one 107 KB file with everything inline and zero external references. It works with your wifi off, and nothing you open in it ever leaves your machine.
+That's the entire setup. No Python, no pip, no server, no build step, no internet — it's one 291 KB file with everything inline (including the Best Practices screenshots) and zero external references. It works with your wifi off, and nothing you open in it ever leaves your machine.
 
 ### Why it exists
 
@@ -106,6 +106,8 @@ Strength 0.6 + noise 0.01 is the combination that survived an A/B test past 3,00
 
 Every line came from a real render that either worked or failed: checkpoint behaviour, the exact settings that cause the "spaghetti line" streaking, the two proven smoothness recipes, camera/FOV rules, init images, prompt and LoRA practice.
 
+The viewer's **Best Practices** tab lays this out in two columns with a screenshot of the actual Deforum control each note is about — click any screenshot to see it full size.
+
 There's a **VELLO'S SECTION** at the bottom. Add yours and send it back and I'll merge it in. (The viewer's Best Practices tab has an Edit button that gives you a download for exactly that.)
 
 ---
@@ -151,4 +153,4 @@ It auto-detects your output folder (`--root`, then `$DEFORUM_OUTPUT`, then the s
 
 **Panel says "press play" and never fills** — that render has no matching `_settings.txt` (see name-matching above), or only the `.mp4` was dropped.
 
-**Page looks empty** — nothing's loaded yet. It ships with no renders inside; that's why it's 107 KB and not 40 GB. Drop something in.
+**Page looks empty** — nothing's loaded yet. It ships with no renders inside; that's why it's 291 KB and not 40 GB. Drop something in.

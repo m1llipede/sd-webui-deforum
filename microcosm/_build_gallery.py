@@ -6,7 +6,7 @@ Scans the ENTIRE img2img-images tree (every render). De-dupes by filename and MO
 renders (rejected / short test partials) into _trash_review\ (not hard-deleted, per archive-before-delete).
 Output: _MASTER_GALLERY.html
 """
-import json, os, re, html, subprocess, shutil, sys
+import json, os, re, html, base64, subprocess, shutil, sys
 
 # --standalone: emit a SHAREABLE single-file viewer with NO local videos baked in (the real gallery
 # points at 100s of GB of local mp4s, so it can't just be emailed). The standalone build is the same
@@ -65,6 +65,41 @@ def load_notes_snapshot():
                 "best_practices": n.get("best_practices", "")}
     except Exception:
         return {"comments": {}, "flags": [], "best_practices": ""}
+
+# Best Practices illustrations. Each note in BEST_PRACTICES.txt is about a specific Deforum
+# control, so the section cards show a crop of that exact control - the way the Deforum docs do
+# it. Inlined as data URIs so the shared single-file viewer stays offline and self-contained.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+BP_SHOT_DIR = next(
+    (d for d in (os.path.join(_HERE, "extensions", "deforum", "screenshots", "bp"),
+                 os.path.join(_HERE, "screenshots", "bp"))
+     if os.path.isdir(d)), "")
+BP_SHOTS = [
+    ("CHECKPOINTS", "checkpoint", "Top of the page", "The checkpoint dropdown - this choice matters more than prompt wording."),
+    ("STREAK",      "cadence",    "Keyframes",       "Cadence. Stay at 10 or under in 3D."),
+    ("STREAK",      "strength",   "Keyframes > Strength", "Strength schedule. 0.6 or under; hold it flat."),
+    ("SMOOTHNESS",  "subtabs",    "Keyframes",       "Color coherence and optical flow live under the Coherence sub-tab."),
+    ("CAMERA",      "animmode",   "Keyframes",       "Animation mode and Border mode. 2D + wrap for the fake-3D look."),
+    ("CAMERA",      "motion",     "Keyframes > Motion / Depth Warping & FOV", "Camera schedules. Animate these, not the image params."),
+    ("INIT",        "init",       "Init > Image Init", "Use init and Strength. This fork ticks Use init when you drop an image."),
+    ("PROMPTS",     "prompts",    "Prompts",         "Keyframed prompts, frame number on the left."),
+    ("PROMPTS",     "negative",   "Prompts",         "The one global negative box. Never bake negatives into keyframes."),
+]
+
+
+def load_bp_shots():
+    out = []
+    for key, fn, panel, cap in BP_SHOTS:
+        p = os.path.join(BP_SHOT_DIR, fn + ".png")
+        if not os.path.isfile(p):
+            continue
+        with open(p, "rb") as fh:
+            b64 = base64.b64encode(fh.read()).decode("ascii")
+        out.append({"key": key, "panel": panel, "cap": cap,
+                    "src": "data:image/png;base64," + b64})
+    return out
+
+
 THUMBS = os.path.join(ROOT, "_thumbs")
 
 
@@ -547,19 +582,37 @@ body.listrows .grid>.card .lorachips{grid-column:3;grid-row:2}
 body.listrows .grid>.card .cmts{grid-column:3;grid-row:3}
 body.listrows .grid>.card .setfill{grid-column:4;grid-row:1/7;column-count:2;column-gap:26px}
 @media (min-width:2400px){body.listrows .grid>.card .setfill{column-count:3}}
-/* Best Practices as a readable document, not a text dump */
-.bpdoc{max-width:100ch}
-.bptitle{font-size:16.5px;font-weight:650;color:var(--ink);margin:0 0 3px}
-.bpsub{color:var(--ink-3);font-size:12.5px;margin:0}
-.bpintro{margin-bottom:16px}
+/* Best Practices as an illustrated two-column document, not a text dump. Each section shows the
+   actual Deforum control it's about, the way the Deforum docs do it. column-count + break-inside
+   keeps a section card whole instead of splitting it across the column gutter. */
+.bpdoc{column-count:2;column-gap:20px}
+@media (max-width:1100px){.bpdoc{column-count:1}}
+@media (min-width:2200px){.bpdoc{column-count:3}}
+.bptitle{font-size:15px;font-weight:650;color:var(--ink);margin:0 0 3px}
+.bpsub{color:var(--ink-3);font-size:12px;margin:0}
+.bpintro{margin:0 0 12px;break-inside:avoid;-webkit-column-break-inside:avoid}
 .bpsec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
-  padding:13px 18px;margin:0 0 12px}
-.bpsec h2{margin:0 0 9px;font-size:11.5px;letter-spacing:.08em;color:var(--accent);
+  padding:11px 14px;margin:0 0 10px;break-inside:avoid;-webkit-column-break-inside:avoid}
+.bpsec h2{margin:0 0 7px;font-size:11px;letter-spacing:.08em;color:var(--accent);
   text-transform:uppercase;font-family:var(--mono);font-weight:650}
-.bpsec ul{margin:0;padding-left:20px}
-.bpsec li{font-size:13.5px;line-height:1.7;color:var(--ink-2);margin:5px 0;max-width:95ch}
+.bpsec ul{margin:0;padding-left:16px}
+.bpsec li{font-size:12.5px;line-height:1.55;color:var(--ink-2);margin:4px 0}
 .bpsec li::marker{color:var(--accent)}
-.bpsec p{font-size:13.5px;line-height:1.65;color:var(--ink-2);margin:6px 0;max-width:95ch}
+.bpsec p{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:5px 0}
+/* reference-sized, not full-size - the whole document is meant to fit on a screen.
+   Click a shot to blow it up to full size and read the labels, click again to shrink. */
+.bpfig{margin:8px 0 0;max-width:460px;border:1px solid var(--line);border-radius:7px;
+  overflow:hidden;background:#0d0d14;cursor:zoom-in}
+/* full-size overlay - inside a column a "big" image is still only column-wide, which is
+   too small to read the Deforum labels */
+#bplightbox{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.86);display:none;
+  align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+#bplightbox.on{display:flex}
+#bplightbox img{max-width:100%;max-height:88vh;width:auto;border:1px solid var(--line);border-radius:8px}
+.bpfig img{display:block;width:100%;height:auto}
+.bpfig figcaption{font-size:10.5px;line-height:1.45;color:var(--ink-3);padding:5px 8px;
+  border-top:1px solid var(--line);background:rgba(255,255,255,.02)}
+.bpfig figcaption b{color:var(--accent);font-family:var(--mono);font-weight:650;letter-spacing:.03em}
 .bpedithint{color:var(--ink-3);font-size:11.5px;margin-top:7px;font-family:var(--mono)}
 .comparewrap{display:none;margin:0 16px 20px;padding:14px;background:#12121a;border:1px solid #2a2a38;border-radius:10px}
 .cwhead{display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap}
@@ -1159,7 +1212,7 @@ function buildPresetCard(p, customIdx){
   card.appendChild(rows);
   var btns=document.createElement('div'); btns.className='pbtns';
   var dl=document.createElement('button'); dl.className='primary';
-  dl.textContent = presetHasFullBase() ? 'Download merged settings.txt' : 'Download overlay .txt';
+  dl.textContent = 'Download';
   dl.title = presetHasFullBase()
     ? 'Merges this preset over your dropped render\'s full settings -> a complete file you can Load All Settings in Deforum.'
     : 'No render dropped yet, so this downloads just the preset fields. Drop a render first to get a complete, loadable settings.txt.';
@@ -1186,7 +1239,7 @@ function renderPresets(){
   clearEl(body);
   var note=document.createElement('div'); note.className='pnote';
   note.textContent = presetHasFullBase()
-    ? 'A render is loaded, so "Download merged settings.txt" gives you a COMPLETE Deforum settings file: this preset\'s look applied over that render\'s settings. Load it in Deforum via the Settings File box -> Load All Settings.'
+    ? 'A render is loaded, so Download gives you a COMPLETE Deforum settings file: this preset\'s look applied over that render\'s settings. Load it in Deforum via the Settings File box -> Load All Settings.'
     : 'Drop a render below first, then a preset download becomes a COMPLETE Deforum settings file (preset merged over that render). Without one, you get just the preset fields as a reference overlay.';
   body.appendChild(note);
   var grid=document.createElement('div'); grid.className='pgrid';
@@ -1537,7 +1590,41 @@ function formatBP(text){
   if(!root.childNodes.length){
     var e=document.createElement('p'); e.className='bpsub'; e.textContent='(empty)'; root.appendChild(e);
   }
+  bpIllustrate(root);
   return root;
+}
+function bpZoom(src){
+  var lb=document.getElementById('bplightbox');
+  if(!lb){
+    lb=document.createElement('div'); lb.id='bplightbox';
+    lb.appendChild(document.createElement('img'));
+    lb.addEventListener('click',function(){ lb.classList.remove('on'); });
+    document.body.appendChild(lb);
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') lb.classList.remove('on'); });
+  }
+  lb.querySelector('img').src=src;
+  lb.classList.add('on');
+}
+/* Hang the matching Deforum control screenshots off each section, keyed by a word in its heading,
+   so the notes stay editable plain text and the pictures follow them automatically. */
+function bpIllustrate(root){
+  if(typeof BP_SHOTS==='undefined' || !BP_SHOTS.length) return;
+  Array.prototype.forEach.call(root.querySelectorAll('.bpsec'), function(sec){
+    var h=sec.querySelector('h2'); if(!h) return;
+    var head=h.textContent.toUpperCase();
+    BP_SHOTS.forEach(function(s){
+      if(head.indexOf(s.key)===-1) return;
+      var fig=document.createElement('figure'); fig.className='bpfig';
+      fig.title='Click to enlarge';
+      fig.addEventListener('click',function(){ bpZoom(s.src); });
+      var img=document.createElement('img'); img.src=s.src; img.alt=s.cap; img.loading='lazy';
+      fig.appendChild(img);
+      var cap=document.createElement('figcaption');
+      var b=document.createElement('b'); b.textContent=s.panel;
+      cap.appendChild(b); cap.appendChild(document.createTextNode('  '+s.cap));
+      fig.appendChild(cap); sec.appendChild(fig);
+    });
+  });
 }
 function renderBP(){
   var body=document.getElementById('bpbody'); if(!body) return;
@@ -2192,6 +2279,7 @@ body.nolive .live{{display:none}}
 var DATA={json.dumps(DATA)};
 var BUILTIN_PRESETS={json.dumps(PRESETS)};
 var NOTES_INIT={json.dumps(load_notes_snapshot())};
+var BP_SHOTS={json.dumps(load_bp_shots())};
 var camFns={{}};
 for(var pid in DATA){{camFns[pid]={{}};for(var lab in DATA[pid].cam){{try{{camFns[pid][lab]=new Function('t','return ('+DATA[pid].cam[lab].js+');');}}catch(e){{camFns[pid][lab]=function(){{return NaN;}};}}}}}}
 function esc(s){{var d=document.createElement('div');d.textContent=s;return d.innerHTML;}}
