@@ -1,0 +1,102 @@
+MICROCOSM DEFORUM  --  HOW TO INSTALL
+=====================================
+
+You do not need GitHub, git, a terminal, or any developer tools.
+This is a folder you copy into place. Five minutes, start to finish.
+
+
+WHAT THIS IS
+------------
+A modified version of the Deforum extension for AUTOMATIC1111 Stable Diffusion.
+It is the normal Deforum you already know, plus a handful of additions:
+
+  - Preset dropdown. Drag any number of settings files onto the preset box and
+    pick them from a list, instead of typing file paths.
+  - Drag and drop settings import, which also relinks the init image for you.
+  - Folder pickers for init images, video input and ControlNet, so you can
+    browse to a folder instead of typing the path.
+  - A Settings Editor tab for editing values without leaving the page.
+  - Tooltips on the parameters that never had any.
+  - Save As with a real Windows save dialog, and a prompts-only loader.
+  - Better error messages when ControlNet is misconfigured.
+  - A link through to the render gallery.
+
+Nothing that already worked was removed. Your existing settings files still load.
+
+
+BEFORE YOU START
+----------------
+Close Stable Diffusion completely if it is running.
+
+
+INSTALLING
+----------
+1. Find your Stable Diffusion folder. It is the one containing "webui-user.bat".
+   Open the "extensions" folder inside it. The path looks like:
+
+       ...\stable-diffusion-webui\extensions\
+
+2. If there is already a folder called "deforum" in there, rename it to
+   "deforum-OLD". Do not delete it. That is your way back if you want it.
+
+3. Unzip the file you downloaded. You will get a folder called "deforum".
+   Drag that folder into the "extensions" folder from step 1.
+
+   When you are done it must look exactly like this:
+
+       ...\stable-diffusion-webui\extensions\deforum\scripts\
+       ...\stable-diffusion-webui\extensions\deforum\INSTALL.txt
+
+   If you instead see "extensions\deforum\deforum\scripts\", you have one
+   folder too many. Move the inner "deforum" up a level.
+
+4. Start Stable Diffusion the way you normally do.
+
+5. Click the Deforum tab. Under the Init tab you should now see a Preset
+   dropdown. That means it worked.
+
+
+NOTHING TO INSTALL
+------------------
+No pip installs, no downloads, no requirements. It uses only what
+AUTOMATIC1111 already ships with.
+
+
+LOADING THE INCLUDED SETTINGS
+-----------------------------
+"microcosm\BEST_DEFAULT_settings.txt" is the full Microcosm recipe: real
+prompts, the whole LoRA stack, nothing stripped out.
+
+  - Drop that file onto the preset box in the Deforum tab, then pick
+    "BEST_DEFAULT" from the Preset dropdown.
+  - The init image it wants, "microcosm-init.png", is in the same folder.
+    Drop it into the Init image box.
+  - It is set to 15,000 frames, which is about a 20 hour render. Turn
+    max_frames down to a few thousand for a first go.
+  - It expects the MOHAWK_v20 checkpoint. Any good SDXL model works, just
+    pick a different one in the usual checkpoint dropdown at the top left.
+
+Missing a LoRA is not fatal. Stable Diffusion prints a "couldn't find Lora"
+line and carries on without it. The render still works, it just looks
+different.
+
+
+THE VIEWER
+----------
+"microcosm\Microcosm.html" needs none of the above. Double-click it and it
+opens in your browser. Drag a finished render and its _settings.txt onto it
+and the panel under the video shows the prompt, the LoRAs, the FOV and every
+camera value at the exact frame you are watching. It works with your wifi
+off and nothing you open in it leaves your machine.
+
+
+IF SOMETHING GOES WRONG
+-----------------------
+The Deforum tab is missing, or Stable Diffusion will not start:
+  Close it. Rename "deforum" to "deforum-BROKEN" and rename your
+  "deforum-OLD" back to "deforum". You are exactly where you started.
+  Then tell Brian what the console window said.
+
+The Deforum tab is there but looks unchanged:
+  You probably have two copies. Check that there is no leftover
+  "deforum" folder somewhere else under "extensions".
