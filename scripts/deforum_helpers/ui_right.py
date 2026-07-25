@@ -103,15 +103,17 @@ def deforum_import_presets(files):
 
     Each file is validated as JSON, has its init_image repaired (see above), and is copied into
     /presets. Nothing is executed and nothing is overwritten silently - a name clash gets a suffix.
-    Returns (dropdown_update, status_text).
+    Returns (dropdown_update, status_text, settings_path_update). The path update points the
+    Settings File box at the last file imported, so the caller can immediately load it.
     """
     import json as _json, shutil as _shutil
     if not files:
-        return gr.update(), "Nothing dropped."
+        return gr.update(), "Nothing dropped.", gr.update()
     if not isinstance(files, (list, tuple)):
         files = [files]
     _os.makedirs(DEFORUM_PRESETS_DIR, exist_ok=True)
     added, skipped, notes = [], [], []
+    last_path = None
     for f in files:
         src = getattr(f, "name", None) or (f if isinstance(f, str) else None)
         if not src or not _os.path.isfile(src):
@@ -141,6 +143,7 @@ def deforum_import_presets(files):
             with open(dst, "w", encoding="utf-8") as fh:
                 _json.dump(d, fh, indent=4)
             added.append(deforum_preset_label(dst))
+            last_path = dst
         except Exception as e:
             skipped.append(f"{base}: could not write ({e})")
 
@@ -148,7 +151,40 @@ def deforum_import_presets(files):
     if added:   msg.append("Added " + str(len(added)) + ": " + ", ".join(added))
     if notes:   msg.append("Fixed: " + " | ".join(notes))
     if skipped: msg.append("Skipped: " + " | ".join(skipped))
-    return gr.update(choices=deforum_list_presets()), ("  ".join(msg) or "Nothing imported.")
+    path_update = gr.update(value=last_path) if last_path else gr.update()
+    return gr.update(choices=deforum_list_presets()), ("  ".join(msg) or "Nothing imported."), path_update
+
+
+def _deforum_seed_default_preset():
+    """Put the shipped Microcosm recipe into /presets so it shows up in the Preset dropdown out of
+    the box - both on Brian's machine and on a fresh install. Copies once; never overwrites. Points
+    init_image at the init that ships beside the recipe so 'use init' isn't left dangling."""
+    try:
+        base = _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                                               "..", "..", "microcosm"))
+        src = _os.path.join(base, "BEST_DEFAULT_settings.txt")
+        if not _os.path.isfile(src):
+            return
+        _os.makedirs(DEFORUM_PRESETS_DIR, exist_ok=True)
+        dst = _os.path.join(DEFORUM_PRESETS_DIR, "00_Microcosm_BEST_settings.txt")
+        if _os.path.exists(dst):
+            return
+        import json as _json
+        with open(src, encoding="utf-8-sig") as fh:
+            d = _json.load(fh)
+        init = _os.path.join(base, "microcosm-init.png")
+        if _os.path.isfile(init):
+            d["init_image"] = init
+        d["resume_from_timestring"] = False
+        d["resume_timestring"] = ""
+        with open(dst, "w", encoding="utf-8") as fh:
+            _json.dump(d, fh, indent=4)
+        print("[deforum-presets] seeded default preset: 00 - Microcosm BEST")
+    except Exception as e:
+        print(f"[deforum-presets] could not seed default preset: {e}")
+
+
+_deforum_seed_default_preset()
 
 
 # --- Folder settings (added): init images / video+ControlNet inputs / models -----------------
@@ -335,17 +371,12 @@ def on_ui_tabs():
                     refresh_presets_btn = gr.Button('Refresh', elem_id='deforum_refresh_presets_btn', scale=1)
                 with gr.Row(variant='compact'):
                     preset_drop = gr.File(
-                        label="Drop settings files here to add them as presets (multiple at once)",
+                        label="Drop a settings file here — it's added to the Preset list above and loaded straight in (drop several to add them all)",
                         file_count="multiple", file_types=[".txt", ".json"],
                         elem_id='deforum_preset_drop')
                 with gr.Row(variant='compact'):
-                    preset_status = gr.Textbox(value="", label="Presets", interactive=False, lines=1,
+                    preset_status = gr.Textbox(value="", label="Last preset action", interactive=False, lines=1,
                                                elem_id='deforum_preset_status')
-                with gr.Row(variant='compact'):
-                    gr.HTML('<a href="/deforum-gallery/_MASTER_GALLERY.html" target="_blank" '
-                            'style="font-size:13px">&#128444; Open the Render Gallery / comparison page'
-                            '</a> <span style="opacity:.6;font-size:12px">(also available as the '
-                            '&quot;Render Gallery&quot; tab above)</span>')
                 with gr.Accordion("Folders — init images, video/ControlNet inputs, models", open=False):
                     with gr.Row(variant='compact'):
                         init_folder_tb = gr.Textbox(value=deforum_folder_get('init'), scale=5,
@@ -363,9 +394,7 @@ def on_ui_tabs():
                             elem_id='deforum_models_folder',
                             info="Fixed at launch. To change it, add --ckpt-dir \"D:\\path\" (and --lora-dir for LoRAs) to COMMANDLINE_ARGS in Start Deforum.bat, then restart.")
                 with gr.Row(variant='compact'):
-                    settings_path = gr.Textbox("deforum_settings.txt", elem_id='deforum_settings_path', label="Settings File", info="Path to load/save settings. Updated automatically when you upload a file.")
-                with gr.Row(variant='compact'):
-                    upload_settings_file = gr.File(label="Upload Settings (Drag & Drop)", file_count="single", file_types=[".txt", ".json"])
+                    settings_path = gr.Textbox("deforum_settings.txt", elem_id='deforum_settings_path', label="Settings File", info="Path of the loaded settings. Set automatically when you pick a preset or drop a file above; type a path here to load one from elsewhere.")
                 with gr.Row(variant='compact'):
                     save_settings_btn = gr.Button('Save Settings', elem_id='deforum_save_settings_btn')
                     save_as_settings_btn = gr.Button('Save As...', elem_id='deforum_save_as_settings_btn')
@@ -391,37 +420,6 @@ def on_ui_tabs():
         
         settings_component_list = [components[name] for name in get_settings_component_names()]
         video_settings_component_list = [components[name] for name in list(DeforumOutputArgs().keys())]
-
-        # Auto-update path textbox when a settings file is uploaded.
-        # Reconstruct the proper output path from batch_name inside the settings,
-        # so Save / Save As default to the real output folder, not gradio temp.
-        def update_settings_path_from_upload(f):
-            if f is None:
-                return gr.update()
-            import os, json
-            name = os.path.basename(f.name)
-            root_dir = os.path.realpath(opts.outdir_img2img_samples or 'outputs/img2img-images')
-            # Most settings files live in the img2img-images root; auto-saved ones live in a
-            # batch_name subfolder. Check both and point at whichever actually exists, as an
-            # absolute path, so Save / Save As target the real file's folder (not the SD root).
-            candidates = [os.path.join(root_dir, name)]
-            try:
-                with open(f.name, 'r', encoding='utf-8') as fh:
-                    data = json.load(fh)
-                batch = data.get('batch_name', '')
-                if batch:
-                    candidates.append(os.path.join(root_dir, batch, name))
-            except Exception:
-                pass
-            for c in candidates:
-                if os.path.isfile(c):
-                    return gr.update(value=os.path.realpath(c))
-            return gr.update(value=os.path.realpath(candidates[0]))
-        upload_settings_file.change(
-            fn=update_settings_path_from_upload,
-            inputs=[upload_settings_file],
-            outputs=[settings_path],
-        )
 
         save_settings_btn.click(
             fn=wrap_gradio_call(save_settings),
@@ -499,11 +497,16 @@ def on_ui_tabs():
             inputs=[],
             outputs=[preset_dropdown],
         )
-        # drag-and-drop any number of settings files -> they become presets immediately
+        # drag-and-drop any number of settings files: they become presets AND the last one loads
+        # straight into the UI. One drop box, one behaviour - no separate "upload settings" box.
         preset_drop.upload(
             fn=deforum_import_presets,
             inputs=[preset_drop],
-            outputs=[preset_dropdown, preset_status],
+            outputs=[preset_dropdown, preset_status, settings_path],
+        ).then(
+            fn=wrap_gradio_call(lambda *args, **kwargs: load_all_settings(*args, ui_launch=False, **kwargs)),
+            inputs=[settings_path] + settings_component_list,
+            outputs=settings_component_list,
         )
 
         # folder settings: Browse opens a native folder dialog; any change persists to the
@@ -519,8 +522,8 @@ def on_ui_tabs():
             outputs=video_settings_component_list,
         )
         
-        # New Settings Editor and File Upload logic
-        from .gradio_funcs import sync_ui_to_editor, sync_editor_to_ui, process_settings_upload
+        # New Settings Editor logic
+        from .gradio_funcs import sync_ui_to_editor, sync_editor_to_ui
         
         settings_editor_code = components['settings_editor_code']
         load_ui_to_editor_btn = components['load_ui_to_editor_btn']
@@ -537,13 +540,7 @@ def on_ui_tabs():
             inputs=[settings_editor_code] + settings_component_list,
             outputs=settings_component_list,
         )
-        
-        upload_settings_file.change(
-            fn=process_settings_upload,
-            inputs=[upload_settings_file] + settings_component_list,
-            outputs=settings_component_list,
-        )
-        
+
     # handle persistent settings - load the persistent file upon UI launch
     def trigger_load_general_settings():
         print("Loading general settings...")

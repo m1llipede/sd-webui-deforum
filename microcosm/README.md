@@ -95,7 +95,7 @@ The recipe, and why (all covered in [`BEST_PRACTICES.txt`](BEST_PRACTICES.txt)):
 steps 40, DPM++ 2M SDE / Karras, CFG 6
 strength 0.6, noise 0.01, cadence 5
 optical flow DIS Fine, color coherence LAB
-midas 0.5, translation_z 2.5, FOV 70, seed 31415
+midas 0.5, translation_z 2.5, FOV 80, seed 31415
 ```
 
 Strength 0.6 + noise 0.01 is the combination that survived an A/B test past 3,000 frames without degrading. LAB locks the palette so colour doesn't drift over a long render. Cadence 5 keeps it dense.
