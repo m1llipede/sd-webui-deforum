@@ -4,14 +4,15 @@
 
 Tools for reviewing Deforum renders and dialling in settings, plus the settings and notes behind them.
 
-Three independent pieces. The first needs nothing installed — you can use it in about ten seconds.
+Three pieces. The first needs nothing installed — you can use it in about ten seconds.
 
 | | What it is | Needs |
 |---|---|---|
 | **[`Microcosm.html`](Microcosm.html)** | Inspect + compare renders | a browser |
 | **[`BEST_DEFAULT_settings.txt`](BEST_DEFAULT_settings.txt)** | My best working recipe, ready to load | Deforum |
 | **[`BEST_PRACTICES.txt`](BEST_PRACTICES.txt)** | What makes renders good or garbage | nothing |
-| **[`gallery-tab/`](gallery-tab/)** | The same viewer, live inside A1111 | A1111 (optional) |
+
+The viewer is one file. If you install the Deforum extension, the Deforum tab has an **Open the render viewer** button that opens this exact same `Microcosm.html` in a browser tab — so there's one viewer, reachable whether Stable Diffusion is open or closed. No separate gallery app.
 
 ---
 
@@ -112,36 +113,15 @@ There's a **VELLO'S SECTION** at the bottom. Add yours and send it back and I'll
 
 ---
 
-## 4. `gallery-tab/` — the viewer live inside A1111 (optional)
+## 4. Opening the viewer from inside Stable Diffusion
 
-The standalone viewer only knows about files you drop into it. This extension gives you the full version: a **Render Gallery** tab inside AUTOMATIC1111 that scans a folder live, plus flagging, comments saved to disk, folder settings, and one-click export of a render with its settings as a zip.
+If you installed the Deforum extension, the Deforum tab has an **Open the render viewer** button. It opens this exact same `Microcosm.html` in a browser tab — the same file you can double-click on disk with Stable Diffusion closed. One viewer, reachable either way, so there's no second app to manage.
 
-### Install
-
-Copy the folder into your extensions directory so it ends up here:
-
-```
-stable-diffusion-webui/
-  extensions/
-    deforum-gallery-tab/
-      scripts/
-        gallery_tab.py
-```
-
-Then restart A1111. A **Render Gallery** tab appears next to Deforum.
-
-**No pip installs.** It only uses libraries A1111 already ships with (fastapi, starlette, gradio, and the standard library). `ffmpeg`/`ffprobe` on your PATH is optional — used for poster thumbnails and durations; without them everything else still works.
-
-It's deliberately a *separate* extension rather than part of Deforum, so updating or reinstalling Deforum can never remove it, and vice versa.
-
-`_build_gallery.py` is the generator behind both the standalone viewer and the in-A1111 page:
+`_build_gallery.py` (shipped alongside) is the generator that produces `Microcosm.html`:
 
 ```bash
-python _build_gallery.py --standalone   # rebuild the shareable single-file viewer
-python _build_gallery.py                # build a local gallery of your whole output folder
+python _build_gallery.py --standalone   # rebuild the single-file viewer
 ```
-
-It auto-detects your output folder (`--root`, then `$DEFORUM_OUTPUT`, then the standard A1111 layout). Heads-up: the non-standalone build de-duplicates by filename and **moves** duplicates into a `_trash_review/` folder next to your renders — it moves, never deletes, but point it at a backed-up tree the first time.
 
 ---
 

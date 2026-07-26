@@ -187,6 +187,21 @@ def _deforum_seed_default_preset():
 _deforum_seed_default_preset()
 
 
+def deforum_viewer_url():
+    """URL that opens the standalone render viewer (microcosm/Microcosm.html) in a browser tab,
+    served by A1111's own /file= endpoint. Same single file you can also double-click on disk -
+    no separate gallery extension, no iframe. Returns '' if the file isn't found."""
+    try:
+        import urllib.parse as _up
+        p = _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                                            "..", "..", "microcosm", "Microcosm.html"))
+        if not _os.path.isfile(p):
+            return ""
+        return "/file=" + _up.quote(p.replace("\\", "/"))
+    except Exception:
+        return ""
+
+
 # --- Folder settings (added): init images / video+ControlNet inputs / models -----------------
 # These belong HERE in the Deforum panel (they are Deforum's inputs), not in the render gallery.
 # Stored in the same shared config the gallery extension uses, so both stay in agreement.
@@ -377,6 +392,16 @@ def on_ui_tabs():
                 with gr.Row(variant='compact'):
                     preset_status = gr.Textbox(value="", label="Last preset action", interactive=False, lines=1,
                                                elem_id='deforum_preset_status')
+                _viewer_url = deforum_viewer_url()
+                if _viewer_url:
+                    with gr.Row(variant='compact'):
+                        gr.HTML(
+                            f'<a href="{_viewer_url}" target="_blank" rel="noopener" '
+                            'style="display:inline-block;background:#2b2d42;color:#e8e8f0;'
+                            'text-decoration:none;border:1px solid #555;border-radius:6px;'
+                            'padding:6px 14px;font-size:13px">&#128444;&#65039; Open the render viewer'
+                            '</a> <span style="opacity:.6;font-size:12px">opens the same '
+                            'Microcosm.html you can double-click with Stable Diffusion closed</span>')
                 with gr.Accordion("Folders — init images, video/ControlNet inputs, models", open=False):
                     with gr.Row(variant='compact'):
                         init_folder_tb = gr.Textbox(value=deforum_folder_get('init'), scale=5,

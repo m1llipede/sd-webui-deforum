@@ -14,7 +14,8 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 - **[`microcosm/Microcosm.html`](microcosm/Microcosm.html)** — the viewer (no install, works offline)
 - **[`microcosm/BEST_DEFAULT_settings.txt`](microcosm/BEST_DEFAULT_settings.txt)** — the real Microcosm recipe: prompts, full LoRA stack, init image
 - **[`microcosm/BEST_PRACTICES.txt`](microcosm/BEST_PRACTICES.txt)** — what causes streaking, the smoothness recipes, camera rules
-- **[`microcosm/gallery-tab/`](microcosm/gallery-tab/)** — optional: the same gallery live inside A1111
+
+Once the extension is installed, the Deforum tab has an **Open the render viewer** button that opens this same `Microcosm.html` in a browser tab — one viewer, whether Stable Diffusion is open or closed.
 
 **[→ Full guide in `microcosm/README.md`](microcosm/README.md)**
 
