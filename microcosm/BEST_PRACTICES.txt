@@ -1,4 +1,4 @@
-DEFORUM BEST PRACTICES — Brian's lab notes (hard-won, every line came from a real render)
+DEFORUM BEST PRACTICES, Brian's lab notes (hard-won, every line came from a real render)
 Vello: add yours below, or edit anything here.
 
 == CHECKPOINTS ==
@@ -8,10 +8,10 @@ Vello: add yours below, or edit anything here.
 - The checkpoint matters MORE than prompt wording for killing the cartoony AI look.
 
 == THE STREAK / SPAGHETTI ZONE (how renders go bad) ==
-- Horror CREATURE LoRAs caused the radiating spaghetti-line streaking. They live in models/Lora/SDXL/Risky/ — leave them there.
-- Cadence 15 + strength 0.7 with 3D depth-warp also spaghettis on its own. Safe zone: cadence <= 10 in 3D (12+ is fine in 2D mode — no depth warp to accumulate), strength <= 0.6.
+- Horror CREATURE LoRAs caused the radiating spaghetti-line streaking. They live in models/Lora/SDXL/Risky/, leave them there.
+- Cadence 15 + strength 0.7 with 3D depth-warp also spaghettis on its own. Safe zone: cadence <= 10 in 3D (12+ is fine in 2D mode, no depth warp to accumulate), strength <= 0.6.
 - Any render past ~3000 frames drifts with master defaults; strength 0.6 + noise 0.01 was the fix that survived an A/B.
-- Fractal LoRAs were wrongly blamed once — exonerated. But the fractal/LINE loras (ral-mndlbrt etc. at high weight) still make hated spaghetti lines. Fractal_Fusion at LOW weight is the liked one.
+- Fractal LoRAs were wrongly blamed once, exonerated. But the fractal/LINE loras (ral-mndlbrt etc. at high weight) still make hated spaghetti lines. Fractal_Fusion at LOW weight is the liked one.
 
 == SMOOTHNESS ==
 - Do NOT oscillate image-quality params (strength / noise / CFG / contrast / antiblur on sine waves). Six of them waving at once = visible breathing/flicker. Animate the CAMERA, keep image params FLAT.
@@ -26,7 +26,7 @@ Vello: add yours below, or edit anything here.
 - midas_weight NEGATIVE (-0.6) = Brian's inverted-depth look. Intentional, not a bug. border: wrap.
 
 == INIT IMAGES ==
-- The init's PALETTE + CONTRAST drive the whole render. Start from something colorful and high-contrast — never the dark-on-black images.
+- The init's PALETTE + CONTRAST drive the whole render. Start from something colorful and high-contrast, never the dark-on-black images.
 - Always use_init=True with a real image. Beware the folder gotcha: settings often point at outputs/deforum_init_images/ while the images actually live in outputs/img2img-images/INIT_IMAGES/.
 - Vary the init per render. Reused inits get samey fast.
 
@@ -34,7 +34,7 @@ Vello: add yours below, or edit anything here.
 - Keyframe every ~300 frames, dense 500+ char prompts. One scene subject + a modifier + camera language.
 - Photoreal language that works: name a real camera ("shot on a Sony Alpha 1 8K, 85mm f/1.4"), "RAW photo", "indistinguishable from a real photograph". Vague "hyperrealistic" alone does nothing.
 - Rotate 1-2 style LoRAs per keyframe for variety; add-detail-xl ~0.5-0.6 as the always-on utility. Anime/painterly/fae LoRAs (Ghibli, Shinkai, xl_more_art, FaeTastic) = instant cartoon; keep them out of photoreal work.
-- Organic/surreal subjects render beautifully; mechanical/clockwork content renders cartoony — avoid.
+- Organic/surreal subjects render beautifully; mechanical/clockwork content renders cartoony, avoid.
 - NEVER bake negative prompts into keyframes. One global negative box, filled by hand.
 
 == VELLO'S SECTION ==

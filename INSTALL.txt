@@ -1,5 +1,5 @@
-MICROCOSM DEFORUM  --  HOW TO INSTALL
-=====================================
+MICROCOSM DEFORUM - HOW TO INSTALL
+==================================
 
 You do not need GitHub, git, a terminal, or any developer tools.
 This is a folder you copy into place. Five minutes, start to finish.
@@ -10,8 +10,8 @@ WHAT THIS IS
 A modified version of the Deforum extension for AUTOMATIC1111 Stable Diffusion.
 It is the normal Deforum you already know, plus a handful of additions:
 
-  - Preset dropdown. Drag any number of settings files onto the preset box and
-    pick them from a list, instead of typing file paths.
+  - Preset dropdown. Drag any number of settings files onto the preset box
+    and pick them from a list, instead of typing file paths.
   - Drag and drop settings import, which also relinks the init image for you.
   - Folder pickers for init images, video input and ControlNet, so you can
     browse to a folder instead of typing the path.
@@ -19,7 +19,7 @@ It is the normal Deforum you already know, plus a handful of additions:
   - Tooltips on the parameters that never had any.
   - Save As with a real Windows save dialog, and a prompts-only loader.
   - Better error messages when ControlNet is misconfigured.
-  - A link through to the render gallery.
+  - An "Open the render viewer" button that opens the viewer in a browser tab.
 
 Nothing that already worked was removed. Your existing settings files still load.
 
@@ -65,10 +65,11 @@ AUTOMATIC1111 already ships with.
 LOADING THE INCLUDED SETTINGS
 -----------------------------
 "microcosm\BEST_DEFAULT_settings.txt" is the full Microcosm recipe: real
-prompts, the whole LoRA stack, nothing stripped out.
+prompts, the whole LoRA stack, nothing stripped out. It is also pre-loaded:
+after install it shows up in the Preset dropdown as "00 - Microcosm BEST".
 
-  - Drop that file onto the preset box in the Deforum tab, then pick
-    "BEST_DEFAULT" from the Preset dropdown.
+  - Pick "00 - Microcosm BEST" from the Preset dropdown, or drop the settings
+    file onto the preset box yourself.
   - The init image it wants, "microcosm-init.png", is in the same folder.
     Drop it into the Init image box.
   - It is set to 15,000 frames, which is about a 20 hour render. Turn
@@ -84,19 +85,21 @@ different.
 THE VIEWER
 ----------
 "microcosm\Microcosm.html" needs none of the above. Double-click it and it
-opens in your browser. Drag a finished render and its _settings.txt onto it
-and the panel under the video shows the prompt, the LoRAs, the FOV and every
-camera value at the exact frame you are watching. It works with your wifi
-off and nothing you open in it leaves your machine.
+opens in your browser. Or, inside Stable Diffusion, click the "Open the render
+viewer" button on the Deforum tab: same file, either way. Drag a finished
+render and its _settings.txt onto it and the panel under the video shows the
+prompt, the LoRAs, the FOV and every camera value at the exact frame you are
+watching. It works with your wifi off and nothing you open in it leaves your
+machine.
 
 
 IF SOMETHING GOES WRONG
 -----------------------
 The Deforum tab is missing, or Stable Diffusion will not start:
-  Close it. Rename "deforum" to "deforum-BROKEN" and rename your
-  "deforum-OLD" back to "deforum". You are exactly where you started.
-  Then tell Brian what the console window said.
+   Close it. Rename "deforum" to "deforum-BROKEN" and rename your
+   "deforum-OLD" back to "deforum". You are exactly where you started.
+   Then tell Brian what the console window said.
 
 The Deforum tab is there but looks unchanged:
-  You probably have two copies. Check that there is no leftover
-  "deforum" folder somewhere else under "extensions".
+   You probably have two copies. Check that there is no leftover
+   "deforum" folder somewhere else under "extensions".

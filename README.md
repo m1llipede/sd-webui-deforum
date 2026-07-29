@@ -7,35 +7,35 @@ This fork doesn't change the render engine. It only changes the UI and adds tool
 
 ---
 
-## 🎬 Start here — Microcosm ([`microcosm/`](microcosm/))
+## Start here, Microcosm ([`microcosm/`](microcosm/))
 
-**The render viewer, my best settings, and the notes behind them.** The viewer needs nothing installed — download one HTML file, double-click it, drag a render in, and watch the prompt / LoRAs / FOV / camera update **at the frame you're looking at**. Tick two renders to compare every parameter side by side with the differences highlighted.
+**The render viewer, my best settings, and the notes behind them.** The viewer needs nothing installed, download one HTML file, double-click it, drag a render in, and watch the prompt / LoRAs / FOV / camera update **at the frame you're looking at**. Tick two renders to compare every parameter side by side with the differences highlighted.
 
-- **[`microcosm/Microcosm.html`](microcosm/Microcosm.html)** — the viewer (no install, works offline)
-- **[`microcosm/BEST_DEFAULT_settings.txt`](microcosm/BEST_DEFAULT_settings.txt)** — the real Microcosm recipe: prompts, full LoRA stack, init image
-- **[`microcosm/BEST_PRACTICES.txt`](microcosm/BEST_PRACTICES.txt)** — what causes streaking, the smoothness recipes, camera rules
+- **[`microcosm/Microcosm.html`](microcosm/Microcosm.html)**, the viewer (no install, works offline)
+- **[`microcosm/BEST_DEFAULT_settings.txt`](microcosm/BEST_DEFAULT_settings.txt)**, the real Microcosm recipe: prompts, full LoRA stack, init image
+- **[`microcosm/BEST_PRACTICES.txt`](microcosm/BEST_PRACTICES.txt)**, what causes streaking, the smoothness recipes, camera rules
 
-Once the extension is installed, the Deforum tab has an **Open the render viewer** button that opens this same `Microcosm.html` in a browser tab — one viewer, whether Stable Diffusion is open or closed.
+Once the extension is installed, the Deforum tab has an **Open the render viewer** button that opens this same `Microcosm.html` in a browser tab, one viewer, whether Stable Diffusion is open or closed.
 
-**[→ Full guide in `microcosm/README.md`](microcosm/README.md)**
+**[Full guide in `microcosm/README.md`](microcosm/README.md)**
 
 ---
 
 ## Panel additions in this fork
 
-- **Preset dropdown** — pick a saved recipe, it loads into every field. Presets are ordinary complete settings `.txt` files in a `presets/` folder next to the WebUI.
-- **Drag-and-drop preset import** — drop any number of settings files to add them as presets. Each is validated, has its `init_image` repaired if the file moved (or `use_init` turned off if it's genuinely gone — this silently breaks loads otherwise), and stale resume-timestrings cleared.
-- **Folders accordion** — init-images and video/ControlNet input folders with a native folder picker. Models folder shown read-only, with a note that it's fixed at launch via `--ckpt-dir`.
+- **Preset dropdown**, pick a saved recipe, it loads into every field. Presets are ordinary complete settings `.txt` files in a `presets/` folder next to the WebUI.
+- **Drag-and-drop preset import**, drop any number of settings files to add them as presets. Each is validated, has its `init_image` repaired if the file moved (or `use_init` turned off if it's genuinely gone, this silently breaks loads otherwise), and stale resume-timestrings cleared.
+- **Folders accordion**, init-images and video/ControlNet input folders with a native folder picker. Models folder shown read-only, with a note that it's fixed at launch via `--ckpt-dir`.
 - **SUGGESTED values and info text** on parameters and ControlNet toggles that shipped with none.
 
 ---
 
-## 🏆 Best settings ever — Spore Mandala
+## Best settings ever, Spore Mandala
 
 The single best result to date. A 15,000-frame, 1024x1024, 30fps two-cycle journey:
-geometric node-mandalas → a fractalized biological universe (mushroom caves, hidden
-faces, eyes, owls and wolves, fractal butterflies and caterpillars) → vast empty space
-→ wormhole → biological singularity, then repeats. Hidden faces and creatures emerge
+geometric node-mandalas into a fractalized biological universe (mushroom caves, hidden
+faces, eyes, owls and wolves, fractal butterflies and caterpillars), then vast empty space,
+a wormhole, a biological singularity, then repeats. Hidden faces and creatures emerge
 "out of nowhere" throughout. Negatives live in the negative-prompt field, not inline.
 
 **[`examples/Spore_Mandala_BEST_EVER_settings.txt`](examples/Spore_Mandala_BEST_EVER_settings.txt)**
@@ -58,7 +58,7 @@ The numbers that matter for this one:
 
 ---
 
-## ⭐ Recommended starting settings
+## Recommended starting settings
 
 The single best long-form recipe to date is included as a ready-to-load preset:
 

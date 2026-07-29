@@ -386,7 +386,7 @@ def on_ui_tabs():
                     refresh_presets_btn = gr.Button('Refresh', elem_id='deforum_refresh_presets_btn', scale=1)
                 with gr.Row(variant='compact'):
                     preset_drop = gr.File(
-                        label="Drop a settings file here — it's added to the Preset list above and loaded straight in (drop several to add them all)",
+                        label="Drop a settings file here, it's added to the Preset list above and loaded straight in (drop several to add them all)",
                         file_count="multiple", file_types=[".txt", ".json"],
                         elem_id='deforum_preset_drop')
                 with gr.Row(variant='compact'):
@@ -399,10 +399,10 @@ def on_ui_tabs():
                             f'<a href="{_viewer_url}" target="_blank" rel="noopener" '
                             'style="display:inline-block;background:#2b2d42;color:#e8e8f0;'
                             'text-decoration:none;border:1px solid #555;border-radius:6px;'
-                            'padding:6px 14px;font-size:13px">&#128444;&#65039; Open the render viewer'
+                            'padding:6px 14px;font-size:13px">Open the render viewer'
                             '</a> <span style="opacity:.6;font-size:12px">opens the same '
                             'Microcosm.html you can double-click with Stable Diffusion closed</span>')
-                with gr.Accordion("Folders — init images, video/ControlNet inputs, models", open=False):
+                with gr.Accordion("Folders, init images, video/ControlNet inputs, models", open=False):
                     with gr.Row(variant='compact'):
                         init_folder_tb = gr.Textbox(value=deforum_folder_get('init'), scale=5,
                             label="Init images folder", elem_id='deforum_init_folder',
@@ -415,7 +415,7 @@ def on_ui_tabs():
                         video_browse_btn = gr.Button('Browse…', scale=1, elem_id='deforum_video_browse')
                     with gr.Row(variant='compact'):
                         gr.Textbox(value=deforum_models_dir(), interactive=False, scale=6,
-                            label="Models (checkpoints) folder — read-only",
+                            label="Models (checkpoints) folder, read-only",
                             elem_id='deforum_models_folder',
                             info="Fixed at launch. To change it, add --ckpt-dir \"D:\\path\" (and --lora-dir for LoRAs) to COMMANDLINE_ARGS in Start Deforum.bat, then restart.")
                 with gr.Row(variant='compact'):
@@ -479,7 +479,7 @@ def on_ui_tabs():
         # outputs/deforum_init_images/<hash>.png and mirror that path into the
         # init_image URL textbox. The textbox IS persisted by save_settings, so
         # the next time the settings file is loaded, init_image points at the
-        # same PNG on disk and the image effectively "comes back" — even though
+        # same PNG on disk and the image effectively "comes back", even though
         # the PIL box widget itself can't be serialized.
         init_image_box_comp = components["init_image_box"]
         init_image_comp = components["init_image"]

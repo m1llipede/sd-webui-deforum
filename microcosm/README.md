@@ -4,7 +4,7 @@
 
 Tools for reviewing Deforum renders and dialling in settings, plus the settings and notes behind them.
 
-Three pieces. The first needs nothing installed — you can use it in about ten seconds.
+Three pieces. The first needs nothing installed, you can use it in about ten seconds.
 
 | | What it is | Needs |
 |---|---|---|
@@ -12,15 +12,15 @@ Three pieces. The first needs nothing installed — you can use it in about ten 
 | **[`BEST_DEFAULT_settings.txt`](BEST_DEFAULT_settings.txt)** | My best working recipe, ready to load | Deforum |
 | **[`BEST_PRACTICES.txt`](BEST_PRACTICES.txt)** | What makes renders good or garbage | nothing |
 
-The viewer is one file. If you install the Deforum extension, the Deforum tab has an **Open the render viewer** button that opens this exact same `Microcosm.html` in a browser tab — so there's one viewer, reachable whether Stable Diffusion is open or closed. No separate gallery app.
+The viewer is one file. If you install the Deforum extension, the Deforum tab has an **Open the render viewer** button that opens this exact same `Microcosm.html` in a browser tab, so there's one viewer, reachable whether Stable Diffusion is open or closed. No separate gallery app.
 
 ---
 
-## 1. The viewer — no install
+## 1. The viewer, no install
 
-**[Download `Microcosm.html`](Microcosm.html)** (right-click → Save link as), then double-click it.
+**[Download `Microcosm.html`](Microcosm.html)** (right-click Save link as), then double-click it.
 
-That's the entire setup. No Python, no pip, no server, no build step, no internet — it's one 291 KB file with everything inline (including the Best Practices screenshots) and zero external references. It works with your wifi off, and nothing you open in it ever leaves your machine.
+That's the entire setup. No Python, no pip, no server, no build step, no internet, it's one 291 KB file with everything inline (including the Best Practices screenshots) and zero external references. It works with your wifi off, and nothing you open in it ever leaves your machine.
 
 ### Why it exists
 
@@ -32,7 +32,7 @@ Deforum writes a video and a settings file side by side, then leaves you guessin
 
 That describes a value *changing* across thousands of frames. Reading it tells you nothing about what frame 8,400 actually looked like.
 
-This viewer evaluates that math live against playback. Press play, and the panel under the video shows the prompt, the LoRAs, the FOV and every camera value **at the frame you're watching**. When a LoRA changes it lights up green. So when a render turns out great — or like total garbage — you can see exactly what was happening at that moment.
+This viewer evaluates that math live against playback. Press play, and the panel under the video shows the prompt, the LoRAs, the FOV and every camera value **at the frame you're watching**. When a LoRA changes it lights up green. So when a render turns out great, or like total garbage, you can see exactly what was happening at that moment.
 
 ### Using it
 
@@ -52,41 +52,41 @@ That's exactly how Deforum saves them, so normally it just works.
 
 ---
 
-## 2. `BEST_DEFAULT_settings.txt` — the Microcosm recipe
+## 2. `BEST_DEFAULT_settings.txt`, the Microcosm recipe
 
-The actual Microcosm v2 settings — the render this whole thing is named after. Real prompts, real LoRA stack, nothing gutted. Only the machine-specific plumbing (output dir, resume state) has been cleared.
+The actual Microcosm v2 settings, the render this whole thing is named after. Real prompts, real LoRA stack, nothing gutted. Only the machine-specific plumbing (output dir, resume state) has been cleared.
 
 **To load it**, either:
 
-- **Drop it on the preset box** in the Deforum tab, then pick it from the **Preset** dropdown. (This fork adds that — drag in any number of settings files and they become presets.)
-- Or the old way: **Settings File** box → path → **Load all settings**.
+- **Drop it on the preset box** in the Deforum tab, then pick it from the **Preset** dropdown. (This fork adds that, drag in any number of settings files and they become presets.)
+- Or the old way: type a path into the **Settings File** box, then click **Load all settings**.
 
 Then swap the prompts for your own and render.
 
 ### What it needs
 
-**Checkpoint:** `MOHAWK_v20`. Any good SDXL model works — just pick a different one in the normal checkpoint dropdown, or change `sd_model_name` in the file.
+**Checkpoint:** `MOHAWK_v20`. Any good SDXL model works, just pick a different one in the normal checkpoint dropdown, or change `sd_model_name` in the file.
 
-**Init image:** `microcosm-init.png` ships next to this file. Drop it into the **Init image** box — this fork auto-ticks "use init" when you do. (The settings reference it by filename, so point it wherever you keep it.)
+**Init image:** `microcosm-init.png` ships next to this file. Drop it into the **Init image** box, this fork auto-ticks "use init" when you do. (The settings reference it by filename, so point it wherever you keep it.)
 
-**LoRAs** — three on every keyframe, the rest as accents:
+**LoRAs**, three on every keyframe, the rest as accents:
 
 | LoRA | Weight | Keyframes |
 |---|---|---|
 | `add-detail-xl` | 0.7 | all 50 |
 | `JuggerCineXL2` | 0.55 | all 50 |
 | `xl_more_art-full_v1` | 0.35 | all 50 |
-| `ral-amber-sdxl` | 0.35–0.45 | 38 |
+| `ral-amber-sdxl` | 0.35-0.45 | 38 |
 | `ral-trichome-sdxl` | 0.40 | 31 |
 | `ral-iricnt-sdxl` | 0.30 | 27 |
-| `coralbugXL` | 0.30–0.40 | 25 |
+| `coralbugXL` | 0.30-0.40 | 25 |
 | `ral-anmlsktn-sdxl-dora` | 0.35 | 20 |
 | `Fractal_Fusion-000009` | 0.30 | 17 |
-| `HR_Giger_SDXL` | — | 13 |
-| `ral-melting-sdxl` | — | 12 |
-| `epoxy_skull-sdxl`, `ral-blueresin-sdxl`, `fractalex` | — | 3–7 |
+| `HR_Giger_SDXL` | varies | 13 |
+| `ral-melting-sdxl` | varies | 12 |
+| `epoxy_skull-sdxl`, `ral-blueresin-sdxl`, `fractalex` | varies | 3-7 |
 
-Missing one isn't fatal — A1111 prints "couldn't find Lora" and carries on without it. The render still works, it just looks different. The three on every keyframe are the ones that matter most.
+Missing one isn't fatal, A1111 prints "couldn't find Lora" and carries on without it. The render still works, it just looks different. The three on every keyframe are the ones that matter most.
 
 **Heads up:** it's set to 15,000 frames, which is the full ~20-hour run. Drop `max_frames` to a few thousand for a first look.
 
@@ -107,7 +107,7 @@ Strength 0.6 + noise 0.01 is the combination that survived an A/B test past 3,00
 
 Every line came from a real render that either worked or failed: checkpoint behaviour, the exact settings that cause the "spaghetti line" streaking, the two proven smoothness recipes, camera/FOV rules, init images, prompt and LoRA practice.
 
-The viewer's **Best Practices** tab lays this out in two columns with a screenshot of the actual Deforum control each note is about — click any screenshot to see it full size.
+The viewer's **Best Practices** tab lays this out in two columns with a screenshot of the actual Deforum control each note is about, click any screenshot to see it full size.
 
 There's a **VELLO'S SECTION** at the bottom. Add yours and send it back and I'll merge it in. (The viewer's Best Practices tab has an Edit button that gives you a download for exactly that.)
 
@@ -115,22 +115,22 @@ There's a **VELLO'S SECTION** at the bottom. Add yours and send it back and I'll
 
 ## 4. Opening the viewer from inside Stable Diffusion
 
-If you installed the Deforum extension, the Deforum tab has an **Open the render viewer** button. It opens this exact same `Microcosm.html` in a browser tab — the same file you can double-click on disk with Stable Diffusion closed. One viewer, reachable either way, so there's no second app to manage.
+If you installed the Deforum extension, the Deforum tab has an **Open the render viewer** button. It opens this exact same `Microcosm.html` in a browser tab, the same file you can double-click on disk with Stable Diffusion closed. One viewer, reachable either way, so there's no second app to manage.
 
 `_build_gallery.py` (shipped alongside) is the generator that produces `Microcosm.html`:
 
 ```bash
-python _build_gallery.py --standalone   # rebuild the single-file viewer
+python _build_gallery.py --standalone # rebuild the single-file viewer
 ```
 
 ---
 
 ## Troubleshooting
 
-**Windows or the browser warns when opening the HTML** — expected. It's a local file containing JavaScript; the warning is generic. Nothing in it talks to the network.
+**Windows or the browser warns when opening the HTML**, expected. It's a local file containing JavaScript; the warning is generic. Nothing in it talks to the network.
 
-**Video shows a still but won't play** — the file's fine; some browsers are fussy with large local videos. Try Chrome or Edge.
+**Video shows a still but won't play**, the file's fine; some browsers are fussy with large local videos. Try Chrome or Edge.
 
-**Panel says "press play" and never fills** — that render has no matching `_settings.txt` (see name-matching above), or only the `.mp4` was dropped.
+**Panel says "press play" and never fills**, that render has no matching `_settings.txt` (see name-matching above), or only the `.mp4` was dropped.
 
-**Page looks empty** — nothing's loaded yet. It ships with no renders inside; that's why it's 291 KB and not 40 GB. Drop something in.
+**Page looks empty**, nothing's loaded yet. It ships with no renders inside; that's why it's 291 KB and not 40 GB. Drop something in.
